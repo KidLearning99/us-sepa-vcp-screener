@@ -346,6 +346,62 @@ def technicals(hist):
             out["res"] = [{"v": _r(v), "n": n} for v, n in res]
             out["sup"] = [{"v": _r(v), "n": n} for v, n in sup]
 
+        # ── Extra indicators (filler cards on the dashboard)
+        if len(c) > 60 and "Volume" in hist:
+            v = hist["Volume"].astype(float)
+            ex = {}
+            # Aroon (25)
+            n = 25
+            hh_i = h.tail(n + 1).values.argmax(); ll_i = l.tail(n + 1).values.argmin()
+            ex["aroonUp"] = _r((hh_i) / n * 100, 0); ex["aroonDn"] = _r((ll_i) / n * 100, 0)
+            # Ultimate Oscillator (7,14,28)
+            bp = c - pd.concat([l, c.shift()], axis=1).min(axis=1)
+            trr = pd.concat([h, c.shift()], axis=1).max(axis=1) - pd.concat([l, c.shift()], axis=1).min(axis=1)
+            a7, a14, a28 = (bp.rolling(k).sum() / trr.rolling(k).sum() for k in (7, 14, 28))
+            ex["uo"] = _r(100 * (4 * a7.iloc[-1] + 2 * a14.iloc[-1] + a28.iloc[-1]) / 7, 1)
+            # Chande Momentum Oscillator (14)
+            dd = c.diff().tail(14); su, sd = dd.clip(lower=0).sum(), -dd.clip(upper=0).sum()
+            ex["cmo"] = _r(100 * (su - sd) / (su + sd), 0) if (su + sd) else None
+            # Vortex (14)
+            vmp = (h - l.shift()).abs().rolling(14).sum(); vmm = (l - h.shift()).abs().rolling(14).sum()
+            trs = trr.rolling(14).sum()
+            ex["viPlus"] = _r(vmp.iloc[-1] / trs.iloc[-1], 2); ex["viMinus"] = _r(vmm.iloc[-1] / trs.iloc[-1], 2)
+            # Elder Ray (13)
+            e13 = c.ewm(span=13, adjust=False).mean()
+            ex["bullPow"] = _r(h.iloc[-1] - e13.iloc[-1], 2); ex["bearPow"] = _r(l.iloc[-1] - e13.iloc[-1], 2)
+            # Force Index (13), scaled by average dollar volume
+            fi = (c.diff() * v).ewm(span=13, adjust=False).mean()
+            dv = (c * v).tail(50).mean()
+            ex["force"] = _r(fi.iloc[-1] / dv * 100, 2) if dv else None
+            # Awesome Oscillator
+            mid = (h + l) / 2
+            ao = mid.rolling(5).mean() - mid.rolling(34).mean()
+            ex["ao"] = _r(ao.iloc[-1] / c.iloc[-1] * 100, 2); ex["aoUp"] = bool(ao.iloc[-1] > ao.iloc[-2])
+            # Chaikin Money Flow (20) and Chaikin Oscillator (3,10)
+            mfm = ((c - l) - (h - c)) / (h - l).replace(0, float("nan"))
+            mfv = (mfm * v).fillna(0)
+            ex["cmf"] = _r(mfv.tail(20).sum() / v.tail(20).sum(), 3) if v.tail(20).sum() else None
+            adl = mfv.cumsum()
+            cho = adl.ewm(span=3, adjust=False).mean() - adl.ewm(span=10, adjust=False).mean()
+            ex["chaikinOsc"] = _r(cho.iloc[-1] / v.tail(20).mean(), 2) if v.tail(20).mean() else None
+            # TRIX (15)
+            e3 = c.ewm(span=15, adjust=False).mean().ewm(span=15, adjust=False).mean().ewm(span=15, adjust=False).mean()
+            trix = e3.pct_change() * 100
+            ex["trix"] = _r(trix.iloc[-1], 3); ex["trixSig"] = _r(trix.ewm(span=9, adjust=False).mean().iloc[-1], 3)
+            # Linear regression trend over 50 sessions (log price): annualised slope and R squared
+            import numpy as _np
+            y = _np.log(c.tail(50).values); x = _np.arange(len(y))
+            sl_, ic_ = _np.polyfit(x, y, 1); pred = sl_ * x + ic_
+            ss = ((y - y.mean()) ** 2).sum()
+            ex["lrSlope"] = _r((_np.exp(sl_ * 252) - 1) * 100, 0)
+            ex["lrR2"] = _r(1 - ((y - pred) ** 2).sum() / ss, 2) if ss else None
+            # Rolling VWAP (20 and 50 sessions)
+            tp_ = (h + l + c) / 3
+            for k in (20, 50):
+                vw = (tp_ * v).tail(k).sum() / v.tail(k).sum() if v.tail(k).sum() else None
+                ex[f"vwap{k}"] = _r(vw, 2) if vw else None
+            out["ex"] = ex
+
         # ── Volatility and risk statistics
         ret = c.pct_change().dropna()
         if len(ret) > 60:

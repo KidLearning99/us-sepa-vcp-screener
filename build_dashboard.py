@@ -492,7 +492,7 @@ function _trow(lbl,val,tag){return '<div style="display:flex;justify-content:spa
 function techHTML(r){
   var t=r.tech||{}; if(!Object.keys(t).length)return '';
   var G='#00d084',A='#ff9f43',R='#ff4757',B='#3b82f6',M='#5a7a9a';
-  var o='<div class="dh" style="margin-top:14px">Technical Indicators</div>';
+  var o='<div class="mv"><div class="dh" style="margin-top:14px">Technical Indicators</div>';
   if(_num(t.rsi)){
     var rt=t.rsi>=70?_tag('OVERBOUGHT',R):t.rsi<=30?_tag('OVERSOLD',G):t.rsi>=50?_tag('BULLISH',G):_tag('WEAK',A);
     o+=_trow('RSI (14)',t.rsi.toFixed(1),rt)+_gauge(t.rsi,30,70);
@@ -519,18 +519,19 @@ function techHTML(r){
       o+=_trow('Band width',t.bbWidth.toFixed(1)+'%'+(_num(t.bbWidthPctile)?' <span style="color:'+M+';font-weight:400">p'+t.bbWidthPctile.toFixed(0)+'</span>':''),sq?_tag('SQUEEZE',B):'');
     }
   }
+  o+='</div><div class="mv">';
   if(_num(t.rs3m)||_num(t.rs12m)){
     o+='<div class="dh" style="margin-top:14px">Relative Strength vs S&amp;P 500</div>';
     o+=_barRow('3 months',t.rs3m,40)+_barRow('6 months',t.rs6m,60)+_barRow('12 months',t.rs12m,100);
     if(t.rsLineHigh)o+='<div style="font-size:10px;color:'+G+';font-weight:700;margin-top:-2px">&#9650; RS line at a 52-week high</div>';
   }
-  o+='<div style="font-size:9px;color:#3d5a78;margin-top:8px;line-height:1.5">Calculated from 1 year of daily closes. Tags are rules of thumb, not signals on their own.</div>';
+  o+='<div style="font-size:9px;color:#3d5a78;margin-top:8px;line-height:1.5">Calculated from 1 year of daily closes. Tags are rules of thumb, not signals on their own.</div></div>';
   return o;
 }
 function tech2HTML(r){
   var t=r.tech||{}; if(!Object.keys(t).length)return '';
   var G='#00d084',A='#ff9f43',R='#ff4757',M='#5a7a9a',B='#3b82f6';
-  var o='<div class="abox" style="margin-top:10px;padding:10px;line-height:1.5">';
+  var o='<div class="mv"><div class="abox" style="margin-top:10px;padding:10px;line-height:1.5">';
   var hd=function(x,top){return '<div style="font-weight:800;font-size:9px;color:var(--text);margin:'+(top?0:10)+'px 0 4px;letter-spacing:.5px">'+x+'</div>';};
   // Moving-average stack
   var m=t.mas||{},names=[['ema10','EMA 10'],['ema21','EMA 21'],['sma20','SMA 20'],['sma50','SMA 50'],['sma100','SMA 100'],['sma200','SMA 200']];
@@ -547,7 +548,7 @@ function tech2HTML(r){
   if(_num(t.cci))o+=_trow('CCI (20)',t.cci.toFixed(0),t.cci>100?_tag('STRONG',G):t.cci<-100?_tag('WEAK',R):'');
   if(_num(t.roc10))o+=_trow('ROC 10 / 20',_pc(t.roc10)+' / '+_pc(t.roc20));
   // Volume-based
-  o+=hd('MONEY FLOW');
+  o+='</div></div><div class="mv"><div class="abox" style="margin-top:10px;padding:10px;line-height:1.5">'+hd('MONEY FLOW',1);
   if(_num(t.mfi))o+=_trow('MFI (14)',t.mfi.toFixed(0),t.mfi>=80?_tag('OVERBOUGHT',R):t.mfi<=20?_tag('OVERSOLD',G):t.mfi>=50?_tag('INFLOW',G):_tag('OUTFLOW',A))+_gauge(t.mfi,20,80);
   if(_num(t.obvTrend))o+=_trow('OBV',(t.obvTrend>=0?'+':'')+t.obvTrend.toFixed(1)+'x',t.obvTrend>0?_tag('ACCUMULATING',G):_tag('DISTRIBUTING',R));
   // Trend tools
@@ -567,7 +568,7 @@ function tech2HTML(r){
     o+=hd('INDICATOR TALLY')+
       '<div style="display:flex;height:7px;border-radius:4px;overflow:hidden;background:#1e2d45"><div style="width:'+pct+'%;background:'+G+'"></div><div style="flex:1;background:'+R+'"></div></div>'+
       _trow('<span style="color:'+G+'">'+bu+' bullish</span> / <span style="color:'+R+'">'+be+' bearish</span>','',_tag(lbl,col));}
-  o+='</div>';
+  o+='</div></div>';
   return o;
 }
 function _line(vals,w,hgt,col,mn,mx){
@@ -577,17 +578,17 @@ function _line(vals,w,hgt,col,mn,mx){
 }
 function _range(arrs){var mn=Infinity,mx=-Infinity;arrs.forEach(function(a){(a||[]).forEach(function(v){if(_num(v)){if(v<mn)mn=v;if(v>mx)mx=v;}});});return [mn,mx];}
 function _pane(title,val,body,h){
-  return '<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.6px;text-transform:uppercase;margin-bottom:3px"><span>'+title+'</span><span style="font-family:JetBrains Mono;text-transform:none">'+val+'</span></div>'+
+  return '<div class="mv" style="margin-top:10px"><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.6px;text-transform:uppercase;margin-bottom:3px"><span>'+title+'</span><span style="font-family:JetBrains Mono;text-transform:none">'+val+'</span></div>'+
     '<svg viewBox="0 0 500 '+h+'" preserveAspectRatio="none" style="width:100%;height:'+h+'px;display:block;background:#070c17;border:1px solid var(--border);border-radius:4px">'+body+'</svg></div>';
 }
 function indChartsHTML(r){
-  var t=r.tech||{},W=500,o='<div><div class="dh">Indicator Charts (60 days)</div>';
+  var t=r.tech||{},W=500,o='';
   if(t.rsiS&&t.rsiS.length>5){
     var H=70,y=function(v){return (H-v/100*H).toFixed(1);};
     var b='<rect x="0" y="0" width="'+W+'" height="'+y(70)+'" fill="#ff475712"/><rect x="0" y="'+y(30)+'" width="'+W+'" height="'+(H-y(30))+'" fill="#00d08412"/>'+
       '<line x1="0" x2="'+W+'" y1="'+y(70)+'" y2="'+y(70)+'" stroke="#ff475766" stroke-dasharray="3,3"/><line x1="0" x2="'+W+'" y1="'+y(50)+'" y2="'+y(50)+'" stroke="#3d5a7844" stroke-dasharray="2,4"/><line x1="0" x2="'+W+'" y1="'+y(30)+'" y2="'+y(30)+'" stroke="#00d08466" stroke-dasharray="3,3"/>'+
       _line(t.rsiS,W,H,'#a78bfa',0,100);
-    o+=_pane('RSI (14)  &middot; 70 / 30',_num(t.rsi)?t.rsi.toFixed(1):'',b,H);
+    o+=_pane('RSI (14), 60D &middot; 70 / 30',_num(t.rsi)?t.rsi.toFixed(1):'',b,H);
   }
   if(t.histS&&t.histS.length>5){
     var H2=80,rg=_range([t.macdS,t.sigS,t.histS]),mx=Math.max(Math.abs(rg[0]),Math.abs(rg[1]))||1,mn=-mx;
@@ -597,27 +598,28 @@ function indChartsHTML(r){
       var col=v>=0?(up?'#00d084':'#00d08466'):(up?'#ff4757':'#ff475766');
       b2+='<rect x="'+x.toFixed(1)+'" y="'+Math.min(y0,y1).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(Math.abs(y1-y0),0.5).toFixed(1)+'" fill="'+col+'"/>';}
     b2+=_line(t.macdS,W,H2,'#3b82f6',mn,mx)+_line(t.sigS,W,H2,'#ff9f43',mn,mx);
-    o+=_pane('MACD (12,26,9) &middot; <span style="color:#3b82f6">MACD</span> <span style="color:#ff9f43">signal</span>',_num(t.macdHist)?'hist '+(t.macdHist>=0?'+':'')+t.macdHist.toFixed(2):'',b2,H2);
+    o+=_pane('MACD 60D &middot; <span style="color:#3b82f6">MACD</span> <span style="color:#ff9f43">signal</span>',_num(t.macdHist)?'hist '+(t.macdHist>=0?'+':'')+t.macdHist.toFixed(2):'',b2,H2);
   }
   if(t.rsS&&t.rsS.length>5){
     var H3=60,rg3=_range([t.rsS]),pad=(rg3[1]-rg3[0])*0.1||1,last=t.rsS[t.rsS.length-1];
     var b3='<line x1="0" x2="'+W+'" y1="'+(H3-(100-rg3[0]+pad)/(rg3[1]-rg3[0]+2*pad)*H3).toFixed(1)+'" y2="'+(H3-(100-rg3[0]+pad)/(rg3[1]-rg3[0]+2*pad)*H3).toFixed(1)+'" stroke="#3d5a78" stroke-dasharray="3,3"/>'+
       _line(t.rsS,W,H3,last>=100?'#00d084':'#ff4757',rg3[0]-pad,rg3[1]+pad);
-    o+=_pane('RS line vs S&amp;P 500 (60 days ago = 100)',_num(last)?last.toFixed(1):'',b3,H3);
+    o+=_pane('RS line vs S&amp;P 500, 60D',_num(last)?last.toFixed(1):'',b3,H3);
   }
-  return o+'</div>';
+  return o;
 }
 function srHTML(r){
   var t=r.tech||{},px=r.price,G='#00d084',R='#ff4757',M='#5a7a9a';
   if(!_num(px))return '';
   var d=function(v){return '<span style="color:'+M+';font-weight:400">'+((v-px)/px*100>=0?'+':'')+((v-px)/px*100).toFixed(1)+'%</span>';};
-  var o='<div class="abox" style="margin-top:12px;padding:10px;line-height:1.5"><div style="font-weight:800;font-size:9px;color:var(--text);margin-bottom:4px;letter-spacing:.5px">SUPPORT &amp; RESISTANCE</div>';
+  var o='<div class="mv"><div class="abox" style="margin-top:12px;padding:10px;line-height:1.5"><div style="font-weight:800;font-size:9px;color:var(--text);margin-bottom:4px;letter-spacing:.5px">SUPPORT &amp; RESISTANCE</div>';
   (t.res||[]).slice().reverse().forEach(function(x){o+=_trow('Resistance'+(x.n>1?' &times;'+x.n:''),'<span style="color:'+R+'">'+CUR+x.v.toFixed(2)+'</span> '+d(x.v));});
   o+='<div style="display:flex;justify-content:space-between;font-size:10px;margin:5px 0;padding:3px 0;border-top:1px dashed #3d5a78;border-bottom:1px dashed #3d5a78"><span style="color:#e8f0fe;font-weight:700">Price</span><span style="font-family:JetBrains Mono;font-weight:700;color:#e8f0fe">'+CUR+px.toFixed(2)+'</span></div>';
   (t.sup||[]).forEach(function(x){o+=_trow('Support'+(x.n>1?' &times;'+x.n:''),'<span style="color:'+G+'">'+CUR+x.v.toFixed(2)+'</span> '+d(x.v));});
   if(!(t.res||[]).length)o+='<div style="font-size:9.5px;color:'+G+';margin-top:4px">No swing resistance overhead in 6 months.</div>';
+  o+='</div></div><div class="mv"><div class="abox" style="margin-top:12px;padding:10px;line-height:1.5">';
   if(t.fib){var f=t.fib;
-    o+='<div style="font-weight:800;font-size:9px;color:var(--text);margin:10px 0 4px;letter-spacing:.5px">FIBONACCI <span style="color:'+M+';font-weight:400">('+(f.up?'pullback of 60D rise':'bounce of 60D fall')+')</span></div>';
+    o+='<div style="font-weight:800;font-size:9px;color:var(--text);margin:0 0 4px;letter-spacing:.5px">FIBONACCI <span style="color:'+M+';font-weight:400">('+(f.up?'pullback of 60D rise':'bounce of 60D fall')+')</span></div>';
     ['0.236','0.382','0.5','0.618','0.786'].forEach(function(k){var v=f.lv[k];if(!_num(v))return;var near=Math.abs(v-px)/px<0.015;
       o+=_trow((parseFloat(k)*100).toFixed(1)+'%',(near?'<span style="color:#ff9f43">&#9679; </span>':'')+CUR+v.toFixed(2)+' '+d(v));});
   }
@@ -627,12 +629,12 @@ function srHTML(r){
       ['R3','R2','R1','S1','S2','S3'].map(function(k){return '<div style="background:#0a1120;border-radius:3px;padding:2px"><div style="color:'+M+';font-size:8px">'+k+'</div><div style="color:'+(k[0]==='R'?R:G)+'">'+(_num(p[k])?p[k].toFixed(2):'-')+'</div></div>';}).join('')+
       '</div>'+_trow('Pivot (P)',CUR+(_num(p.P)?p.P.toFixed(2):'-'),px>=p.P?_tag('ABOVE',G):_tag('BELOW',R));
   }
-  return o+'</div>';
+  return o+'</div></div>';
 }
 function volStatsHTML(r){
   var t=r.tech||{},G='#00d084',R='#ff4757',A='#ff9f43',M='#5a7a9a';
   if(!_num(t.hv20))return '';
-  var o='<div class="abox" style="margin-top:12px;padding:12px;font-size:11px;border-left-color:#3b82f6;line-height:1.5"><strong style="color:#3b82f6;display:block;margin-bottom:4px;font-size:10.5px">VOLATILITY &amp; RISK</strong>';
+  var o='<div class="mv"><div class="abox" style="margin-top:12px;padding:12px;font-size:11px;border-left-color:#3b82f6;line-height:1.5"><strong style="color:#3b82f6;display:block;margin-bottom:4px;font-size:10.5px">VOLATILITY &amp; RISK</strong>';
   var hvc=t.hv20<t.hv60*0.8?G:t.hv20>t.hv60*1.2?R:'#e8f0fe';
   o+=_trow('Hist. vol 20D / 60D / 1Y','<span style="color:'+hvc+'">'+t.hv20.toFixed(0)+'%</span> / '+t.hv60.toFixed(0)+'% / '+t.hv250.toFixed(0)+'%',t.hv20<t.hv60*0.8?_tag('CONTRACTING',G):t.hv20>t.hv60*1.2?_tag('EXPANDING',R):'');
   if(_num(t.adr20))o+=_trow('Avg daily range (20D)',t.adr20.toFixed(1)+'%');
@@ -640,15 +642,55 @@ function volStatsHTML(r){
   if(_num(t.corr))o+=_trow('Correlation to S&amp;P',t.corr.toFixed(2));
   if(_num(t.maxDD))o+=_trow('Max drawdown (1Y)','<span style="color:'+R+'">'+t.maxDD.toFixed(1)+'%</span>'+(_num(t.spyMaxDD)?' <span style="color:'+M+';font-weight:400">SPY '+t.spyMaxDD.toFixed(1)+'%</span>':''));
   if(_num(t.curDD))o+=_trow('Off 1Y peak','<span style="color:'+(t.curDD>-10?G:t.curDD>-25?A:R)+'">'+t.curDD.toFixed(1)+'%</span>');
-  o+='<div style="margin-top:8px;padding-top:6px;border-top:1px solid #3b82f633;font-weight:800;font-size:9px;color:var(--text);letter-spacing:.5px">LAST 60 SESSIONS</div>';
+  o+='</div></div><div class="mv"><div class="abox" style="margin-top:12px;padding:12px;font-size:11px;border-left-color:#3b82f6;line-height:1.5"><strong style="color:#3b82f6;display:block;margin-bottom:4px;font-size:10.5px">LAST 60 SESSIONS</strong>';
   if(_num(t.upDays60))o+=_trow('Up days',t.upDays60.toFixed(0)+'%',t.upDays60>=55?_tag('BUYERS',G):t.upDays60<=45?_tag('SELLERS',R):'');
   if(_num(t.bestDay60))o+=_trow('Best / worst day','<span style="color:'+G+'">+'+t.bestDay60.toFixed(1)+'%</span> / <span style="color:'+R+'">'+t.worstDay60.toFixed(1)+'%</span>');
   if(_num(t.gapUps))o+=_trow('Gaps over 2%','<span style="color:'+G+'">'+t.gapUps+' up</span> / <span style="color:'+R+'">'+t.gapDowns+' down</span>');
   if(_num(t.streak)&&t.streak!==0)o+=_trow('Current streak',Math.abs(t.streak)+' '+(t.streak>0?'up':'down')+' day'+(Math.abs(t.streak)>1?'s':''),t.streak>0?_tag('UP',G):_tag('DOWN',R));
-  return o+'</div>';
+  return o+'</div></div>';
+}
+function _card(title,val,tag,note){
+  return '<div class="mv xc" style="margin-top:10px"><div class="abox" style="padding:9px 10px;line-height:1.45">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:800;font-size:9px;color:var(--text);letter-spacing:.5px;text-transform:uppercase">'+title+'</span>'+(tag||'')+'</div>'+
+    '<div style="font-family:JetBrains Mono;font-weight:700;font-size:12px;color:#e8f0fe;margin-top:3px">'+val+'</div>'+
+    (note?'<div style="font-size:9px;color:var(--muted);margin-top:2px">'+note+'</div>':'')+'</div></div>';
+}
+function extraCards(r){
+  var e=(r.tech||{}).ex||{},G='#00d084',R='#ff4757',A='#ff9f43',M='#5a7a9a',c=[],px=r.price;
+  var sp=function(v,col){return '<span style="color:'+col+'">'+v+'</span>';};
+  if(_num(e.lrSlope))c.push(_card('Trend quality (50D)',(e.lrSlope>=0?'+':'')+e.lrSlope.toFixed(0)+'%/yr &middot; R&sup2; '+(_num(e.lrR2)?e.lrR2.toFixed(2):'-'),e.lrR2>=0.8?_tag(e.lrSlope>0?'SMOOTH UP':'SMOOTH DOWN',e.lrSlope>0?G:R):e.lrR2<0.4?_tag('CHOPPY',A):'','Log-price regression; R&sup2; near 1 = steady trend'));
+  if(_num(e.aroonUp))c.push(_card('Aroon (25)',sp('Up '+e.aroonUp.toFixed(0),G)+' / '+sp('Down '+e.aroonDn.toFixed(0),R),e.aroonUp>=70&&e.aroonDn<=30?_tag('UPTREND',G):e.aroonDn>=70&&e.aroonUp<=30?_tag('DOWNTREND',R):_tag('RANGE',M),'Days since 25-day high / low, as %'));
+  if(_num(e.viPlus))c.push(_card('Vortex (14)',sp('VI+ '+e.viPlus.toFixed(2),G)+' / '+sp('VI- '+e.viMinus.toFixed(2),R),e.viPlus>e.viMinus?_tag('BULL',G):_tag('BEAR',R),''));
+  if(_num(e.uo))c.push(_card('Ultimate Oscillator',e.uo.toFixed(0),e.uo>70?_tag('OVERBOUGHT',R):e.uo<30?_tag('OVERSOLD',G):e.uo>=50?_tag('BULLISH',G):_tag('WEAK',A),'7 / 14 / 28-day buying pressure'));
+  if(_num(e.cmo))c.push(_card('Chande Momentum (14)',(e.cmo>=0?'+':'')+e.cmo.toFixed(0),e.cmo>50?_tag('OVERBOUGHT',R):e.cmo<-50?_tag('OVERSOLD',G):'',''));
+  if(_num(e.trix))c.push(_card('TRIX (15)',(e.trix>=0?'+':'')+e.trix.toFixed(3)+'% <span style="color:'+M+';font-weight:400;font-size:10px">sig '+e.trixSig.toFixed(3)+'</span>',e.trix>e.trixSig?_tag('RISING',G):_tag('FALLING',R),'Triple-smoothed momentum'));
+  if(_num(e.ao))c.push(_card('Awesome Oscillator',(e.ao>=0?'+':'')+e.ao.toFixed(2)+'% of price',e.ao>=0?(e.aoUp?_tag('BULL RISING',G):_tag('BULL FADING',A)):(e.aoUp?_tag('BEAR EASING',A):_tag('BEAR FALLING',R)),'5 vs 34-day midpoint average'));
+  if(_num(e.bullPow))c.push(_card('Elder Ray (13)',sp('Bull '+(e.bullPow>=0?'+':'')+e.bullPow.toFixed(2),e.bullPow>=0?G:R)+' / '+sp('Bear '+(e.bearPow>=0?'+':'')+e.bearPow.toFixed(2),e.bearPow>=0?G:R),e.bullPow>0&&e.bearPow<0?_tag('BALANCED',M):e.bearPow>=0?_tag('STRONG',G):e.bullPow<=0?_tag('WEAK',R):'','High and low vs 13-day EMA'));
+  if(_num(e.cmf))c.push(_card('Chaikin Money Flow (20)',(e.cmf>=0?'+':'')+e.cmf.toFixed(3),e.cmf>0.1?_tag('ACCUMULATION',G):e.cmf<-0.1?_tag('DISTRIBUTION',R):_tag('NEUTRAL',M),''));
+  if(_num(e.chaikinOsc))c.push(_card('Chaikin Oscillator',(e.chaikinOsc>=0?'+':'')+e.chaikinOsc.toFixed(2)+'x avg vol',e.chaikinOsc>0?_tag('INFLOW',G):_tag('OUTFLOW',R),'3 vs 10-day A/D line'));
+  if(_num(e.force))c.push(_card('Force Index (13)',(e.force>=0?'+':'')+e.force.toFixed(2)+'%',e.force>0?_tag('BUYERS',G):_tag('SELLERS',R),'Price change x volume, vs avg $ volume'));
+  if(_num(e.vwap20)&&_num(px))c.push(_card('Rolling VWAP',CUR+e.vwap20.toFixed(2)+' <span style="color:'+M+';font-weight:400;font-size:10px">20D</span> &middot; '+CUR+(_num(e.vwap50)?e.vwap50.toFixed(2):'-')+' <span style="color:'+M+';font-weight:400;font-size:10px">50D</span>',px>e.vwap20&&px>e.vwap50?_tag('ABOVE BOTH',G):px<e.vwap20&&px<e.vwap50?_tag('BELOW BOTH',R):_tag('MIXED',A),'Volume-weighted average price paid'));
+  return c;
+}
+function fillGaps(panel,pool){
+  if(!pool)return;
+  var cards=Array.prototype.slice.call(pool.children),cols=Array.prototype.slice.call(panel.children).filter(function(c){return c!==pool&&c.offsetParent!==null;});
+  for(var guard=0;guard<30&&cards.length;guard++){
+    var rows={};cols.forEach(function(c){var k=Math.round(c.offsetTop);(rows[k]=rows[k]||[]).push(c);});
+    var placed=false;
+    Object.keys(rows).forEach(function(k){
+      var g=rows[k];if(g.length<2||placed||!cards.length)return;
+      var hs=g.map(function(c){return c.getBoundingClientRect().height;});
+      var mx=Math.max.apply(null,hs),si=hs.indexOf(Math.min.apply(null,hs)),gap=mx-hs[si];
+      if(gap<55)return;
+      var card=cards.shift();g[si].appendChild(card);placed=true;
+      if(g[si].getBoundingClientRect().height>mx+25)pool.appendChild(card);   // too tall for this gap: put it back, try the next card
+    });
+    if(!placed)break;
+  }
 }
 function fillFund(r){
-  var out='';
+  var out='<div class="mv">';
   // Key stats
   var fwd=(_num(r.trailingEps)&&_num(r.forwardEps)&&r.trailingEps>0)?(r.forwardEps-r.trailingEps)/r.trailingEps*100:null;
   out+='<div class="dh" style="margin-top:14px">Key Stats</div><table class="mat">'+
@@ -659,6 +701,7 @@ function fillFund(r){
     _kv('Fwd EPS chg',_pc(fwd))+
     '</table>';
   if(r.sector)out+='<div style="font-size:10px;color:#4a6a8a;margin-top:4px">'+r.sector+'</div>';
+  out+='</div><div class="mv">';
   // 52-week range
   if(_num(r.lo52)&&_num(r.hi52)&&r.hi52>r.lo52&&_num(r.price)){
     var pos=Math.max(0,Math.min(100,(r.price-r.lo52)/(r.hi52-r.lo52)*100));
@@ -671,21 +714,23 @@ function fillFund(r){
       _kv('Above low',_num(r.pctAboveLow)?'<span style="color:'+(r.pctAboveLow>=25?'#00d084':'#ff9f43')+'">'+r.pctAboveLow.toFixed(1)+'%</span>':'n/a')+
       '</table>';
   }
+  out+='</div><div class="mv">';
   // Price vs moving averages
   if(_num(r.price)){
     var d=function(m){return _num(m)&&m>0?(r.price-m)/m*100:null;};
     out+='<div class="dh" style="margin-top:14px">Price vs Moving Avgs</div>'+
       _barRow('vs MA50',d(r.ma50),25)+_barRow('vs MA150',d(r.ma150),40)+_barRow('vs MA200',d(r.ma200),50);
   }
+  out+='</div><div class="mv">';
   // Performance
-  out+='<div class="dh" style="margin-top:10px">Performance</div>'+
+  out+='<div class="dh" style="margin-top:14px">Performance</div>'+
     _barRow('Today',r.change,5)+_barRow('5 days',r.chg5d,15)+_barRow('60 days',r.chg60d,40)+_barRow('12 months',r.chg250d,100);
   // Accumulation
   if(_num(r.accDistRatio)){
     var a=r.accDistRatio,ac=a>=1.2?'#00d084':a>=1?'#8bc34a':'#ff4757';
     out+='<table class="mat" style="margin-top:2px">'+_kv('Up/Down vol (60D)','<span style="color:'+ac+'">'+a.toFixed(2)+'x</span>')+'</table>';
   }
-  out+=techHTML(r);
+  out+='</div>'+techHTML(r);
   return out;
 }
 
@@ -1369,16 +1414,37 @@ function det(r){
   chartCol=chartCol.slice(0,-6)+indChartsHTML(r)+\'</div>\';
   sepaCol=sepaCol.slice(0,-6)+srHTML(r)+\'</div>\';
   nuanceHTML=nuanceHTML.slice(0,-6)+volStatsHTML(r)+\'</div>\';
-  return \'<div class=\"dpanel\">\'+chartCol+sepaCol+fundCol+vcpCol+tradeCol+nuanceHTML+\'</div>\';
+  return \'<div class=\"dpanel\">\'+chartCol+sepaCol+fundCol+vcpCol+tradeCol+nuanceHTML+\'<div class=\"xpool\" style=\"display:none\">\'+extraCards(r).join(\'\')+\'</div></div>\';
 }
 
 
+function _topMv(col){return Array.prototype.filter.call(col.querySelectorAll('.mv'),function(m){var p=m.parentElement;while(p&&p!==col){if(p.classList.contains('mv'))return false;p=p.parentElement;}return true;});}
+function balancePanel(panel){
+  if(!panel)return;
+  panel.style.alignItems='start';
+  var cols=Array.prototype.slice.call(panel.children).filter(function(c){return !c.classList.contains('xpool');});
+  for(var it=0;it<40;it++){
+    var rows={};cols.forEach(function(c){var k=Math.round(c.offsetTop);(rows[k]=rows[k]||[]).push(c);});
+    var moved=false;
+    Object.keys(rows).forEach(function(k){
+      var g=rows[k];if(g.length<2||moved)return;
+      var hs=g.map(function(c){return c.getBoundingClientRect().height;});
+      var ti=hs.indexOf(Math.max.apply(null,hs)),si=hs.indexOf(Math.min.apply(null,hs)),diff=hs[ti]-hs[si];
+      if(diff<40)return;
+      var best=null,bestMax=hs[ti]-20;
+      _topMv(g[ti]).forEach(function(b){var h=b.getBoundingClientRect().height+12;if(h<20)return;var m=Math.max(hs[ti]-h,hs[si]+h);if(m<bestMax){bestMax=m;best=b;}});
+      if(best){var tgt=g[si];(tgt.lastElementChild&&tgt.children.length===1&&tgt.lastElementChild.tagName==='DIV'&&tgt.lastElementChild.style.height==='100%'?tgt.lastElementChild:tgt).appendChild(best);moved=true;}
+    });
+    if(!moved)break;
+  }
+}
 function tog(i){
   var el=document.getElementById('d'+i);
   var mr=document.getElementById('mr'+i);
   var showing=el.style.display!=='none';
   el.style.display=showing?'none':'table-row';
   if(mr)mr.classList.toggle('expanded',!showing);
+  if(!showing&&!el.dataset.bal){el.dataset.bal='1';requestAnimationFrame(function(){var dp=el.querySelector('.dpanel');balancePanel(dp);fillGaps(dp,dp.querySelector('.xpool'));});}
 }
 render();
 </script>
