@@ -300,6 +300,85 @@ def technicals(hist):
                 out["ichi"] = "above" if px > top else ("below" if px < bot else "inside")
                 out["tkCross"] = "bull" if tenkan.iloc[-1] > kijun.iloc[-1] else "bear"
 
+        # ── Series for the indicator charts (last 60 sessions, same window as candles)
+        N = 60
+        def _ser(x, d=2): return [_r(v, d) for v in x.tail(N).tolist()]
+        if len(c) > 15:
+            out["rsiS"] = _ser(rsi, 1)
+        if len(c) > 35:
+            out["macdS"] = _ser(macd, 3); out["sigS"] = _ser(sig, 3); out["histS"] = _ser(hst, 3)
+        if SPY_CLOSE is not None:
+            rl = (c / SPY_CLOSE.reindex(c.index).ffill()).dropna()
+            if len(rl) >= N:
+                base = rl.iloc[-N]
+                out["rsS"] = [_r(v / base * 100, 2) for v in rl.tail(N).tolist()]
+
+        # ── Support / resistance
+        if len(c) > 30:
+            # Classic floor pivots from the last completed session
+            H, L, C = h.iloc[-1], l.iloc[-1], c.iloc[-1]
+            P = (H + L + C) / 3
+            out["pivots"] = {"P": _r(P), "R1": _r(2 * P - L), "R2": _r(P + (H - L)), "R3": _r(H + 2 * (P - L)),
+                             "S1": _r(2 * P - H), "S2": _r(P - (H - L)), "S3": _r(L - 2 * (H - P))}
+            # Fibonacci retracement of the 60-session swing
+            win_h, win_l = h.tail(60), l.tail(60)
+            sh, sl = win_h.max(), win_l.min()
+            up = win_h.idxmax() > win_l.idxmin()   # swing up: retrace from the high down
+            fib = {}
+            for f in (0.236, 0.382, 0.5, 0.618, 0.786):
+                fib[str(f)] = _r(sh - (sh - sl) * f) if up else _r(sl + (sh - sl) * f)
+            out["fib"] = {"hi": _r(sh), "lo": _r(sl), "up": bool(up), "lv": fib}
+            # Swing levels: 5-bar fractal highs/lows over the last 120 sessions
+            hh_, ll_ = h.tail(120).tolist(), l.tail(120).tolist()
+            highs = [hh_[i] for i in range(2, len(hh_) - 2) if hh_[i] == max(hh_[i - 2:i + 3])]
+            lows  = [ll_[i] for i in range(2, len(ll_) - 2) if ll_[i] == min(ll_[i - 2:i + 3])]
+            def _cluster(vals):
+                vals = sorted(vals); outv = []
+                for v in vals:
+                    if outv and abs(v / outv[-1][0] - 1) < 0.015:
+                        outv[-1] = ((outv[-1][0] * outv[-1][1] + v) / (outv[-1][1] + 1), outv[-1][1] + 1)
+                    else:
+                        outv.append((v, 1))
+                return outv
+            lv = _cluster(highs + lows)
+            res = sorted([x for x in lv if x[0] > px], key=lambda x: x[0])[:3]
+            sup = sorted([x for x in lv if x[0] < px], key=lambda x: -x[0])[:3]
+            out["res"] = [{"v": _r(v), "n": n} for v, n in res]
+            out["sup"] = [{"v": _r(v), "n": n} for v, n in sup]
+
+        # ── Volatility and risk statistics
+        ret = c.pct_change().dropna()
+        if len(ret) > 60:
+            import math as _m
+            out["hv20"] = _r(ret.tail(20).std() * _m.sqrt(252) * 100, 1)
+            out["hv60"] = _r(ret.tail(60).std() * _m.sqrt(252) * 100, 1)
+            out["hv250"] = _r(ret.std() * _m.sqrt(252) * 100, 1)
+            peak = c.cummax(); ddser = c / peak - 1
+            out["maxDD"] = _r(ddser.min() * 100, 1)
+            out["curDD"] = _r(ddser.iloc[-1] * 100, 1)
+            out["adr20"] = _r(((h - l) / c).tail(20).mean() * 100, 2)
+            r60 = ret.tail(60)
+            out["upDays60"] = _r((r60 > 0).mean() * 100, 0)
+            out["bestDay60"] = _r(r60.max() * 100, 1); out["worstDay60"] = _r(r60.min() * 100, 1)
+            streak = 0
+            for v in reversed(ret.tolist()):
+                if v > 0 and streak >= 0: streak += 1
+                elif v < 0 and streak <= 0: streak -= 1
+                else: break
+            out["streak"] = streak
+            if "Open" in hist:
+                o_ = hist["Open"].astype(float)
+                gaps = (o_ / c.shift() - 1).tail(60).dropna()
+                out["gapUps"] = int((gaps > 0.02).sum()); out["gapDowns"] = int((gaps < -0.02).sum())
+            if SPY_CLOSE is not None:
+                sret = SPY_CLOSE.reindex(c.index).ffill().pct_change()
+                j = pd.concat([ret, sret], axis=1).dropna()
+                if len(j) > 60 and j.iloc[:, 1].var() > 0:
+                    out["beta"] = _r(j.iloc[:, 0].cov(j.iloc[:, 1]) / j.iloc[:, 1].var(), 2)
+                    out["corr"] = _r(j.iloc[:, 0].corr(j.iloc[:, 1]), 2)
+                    spy_dd = (SPY_CLOSE / SPY_CLOSE.cummax() - 1).min()
+                    out["spyMaxDD"] = _r(spy_dd * 100, 1)
+
         if len(c) > 21:   # Keltner(20, 2xATR10) and Donchian(20)
             em = c.ewm(span=20, adjust=False).mean().iloc[-1]
             at10 = tr.ewm(alpha=1/10, adjust=False).mean().iloc[-1]

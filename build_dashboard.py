@@ -570,6 +570,83 @@ function tech2HTML(r){
   o+='</div>';
   return o;
 }
+function _line(vals,w,hgt,col,mn,mx){
+  var pts=[],n=vals.length;
+  for(var i=0;i<n;i++){var v=vals[i];if(!_num(v))continue;pts.push((i/(n-1)*w).toFixed(1)+','+(hgt-(v-mn)/(mx-mn||1)*hgt).toFixed(1));}
+  return '<polyline fill="none" stroke="'+col+'" stroke-width="1.4" points="'+pts.join(' ')+'"/>';
+}
+function _range(arrs){var mn=Infinity,mx=-Infinity;arrs.forEach(function(a){(a||[]).forEach(function(v){if(_num(v)){if(v<mn)mn=v;if(v>mx)mx=v;}});});return [mn,mx];}
+function _pane(title,val,body,h){
+  return '<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.6px;text-transform:uppercase;margin-bottom:3px"><span>'+title+'</span><span style="font-family:JetBrains Mono;text-transform:none">'+val+'</span></div>'+
+    '<svg viewBox="0 0 500 '+h+'" preserveAspectRatio="none" style="width:100%;height:'+h+'px;display:block;background:#070c17;border:1px solid var(--border);border-radius:4px">'+body+'</svg></div>';
+}
+function indChartsHTML(r){
+  var t=r.tech||{},W=500,o='<div><div class="dh">Indicator Charts (60 days)</div>';
+  if(t.rsiS&&t.rsiS.length>5){
+    var H=70,y=function(v){return (H-v/100*H).toFixed(1);};
+    var b='<rect x="0" y="0" width="'+W+'" height="'+y(70)+'" fill="#ff475712"/><rect x="0" y="'+y(30)+'" width="'+W+'" height="'+(H-y(30))+'" fill="#00d08412"/>'+
+      '<line x1="0" x2="'+W+'" y1="'+y(70)+'" y2="'+y(70)+'" stroke="#ff475766" stroke-dasharray="3,3"/><line x1="0" x2="'+W+'" y1="'+y(50)+'" y2="'+y(50)+'" stroke="#3d5a7844" stroke-dasharray="2,4"/><line x1="0" x2="'+W+'" y1="'+y(30)+'" y2="'+y(30)+'" stroke="#00d08466" stroke-dasharray="3,3"/>'+
+      _line(t.rsiS,W,H,'#a78bfa',0,100);
+    o+=_pane('RSI (14)  &middot; 70 / 30',_num(t.rsi)?t.rsi.toFixed(1):'',b,H);
+  }
+  if(t.histS&&t.histS.length>5){
+    var H2=80,rg=_range([t.macdS,t.sigS,t.histS]),mx=Math.max(Math.abs(rg[0]),Math.abs(rg[1]))||1,mn=-mx;
+    var yy=function(v){return H2-(v-mn)/(mx-mn)*H2;},n=t.histS.length,bw=W/n*0.7,b2='<line x1="0" x2="'+W+'" y1="'+yy(0)+'" y2="'+yy(0)+'" stroke="#3d5a78"/>';
+    for(var i=0;i<n;i++){var v=t.histS[i];if(!_num(v))continue;var x=i/(n-1)*W-bw/2,y0=yy(0),y1=yy(v);
+      var up=i>0&&_num(t.histS[i-1])?Math.abs(v)>=Math.abs(t.histS[i-1]):true;
+      var col=v>=0?(up?'#00d084':'#00d08466'):(up?'#ff4757':'#ff475766');
+      b2+='<rect x="'+x.toFixed(1)+'" y="'+Math.min(y0,y1).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(Math.abs(y1-y0),0.5).toFixed(1)+'" fill="'+col+'"/>';}
+    b2+=_line(t.macdS,W,H2,'#3b82f6',mn,mx)+_line(t.sigS,W,H2,'#ff9f43',mn,mx);
+    o+=_pane('MACD (12,26,9) &middot; <span style="color:#3b82f6">MACD</span> <span style="color:#ff9f43">signal</span>',_num(t.macdHist)?'hist '+(t.macdHist>=0?'+':'')+t.macdHist.toFixed(2):'',b2,H2);
+  }
+  if(t.rsS&&t.rsS.length>5){
+    var H3=60,rg3=_range([t.rsS]),pad=(rg3[1]-rg3[0])*0.1||1,last=t.rsS[t.rsS.length-1];
+    var b3='<line x1="0" x2="'+W+'" y1="'+(H3-(100-rg3[0]+pad)/(rg3[1]-rg3[0]+2*pad)*H3).toFixed(1)+'" y2="'+(H3-(100-rg3[0]+pad)/(rg3[1]-rg3[0]+2*pad)*H3).toFixed(1)+'" stroke="#3d5a78" stroke-dasharray="3,3"/>'+
+      _line(t.rsS,W,H3,last>=100?'#00d084':'#ff4757',rg3[0]-pad,rg3[1]+pad);
+    o+=_pane('RS line vs S&amp;P 500 (60 days ago = 100)',_num(last)?last.toFixed(1):'',b3,H3);
+  }
+  return o+'</div>';
+}
+function srHTML(r){
+  var t=r.tech||{},px=r.price,G='#00d084',R='#ff4757',M='#5a7a9a';
+  if(!_num(px))return '';
+  var d=function(v){return '<span style="color:'+M+';font-weight:400">'+((v-px)/px*100>=0?'+':'')+((v-px)/px*100).toFixed(1)+'%</span>';};
+  var o='<div class="abox" style="margin-top:12px;padding:10px;line-height:1.5"><div style="font-weight:800;font-size:9px;color:var(--text);margin-bottom:4px;letter-spacing:.5px">SUPPORT &amp; RESISTANCE</div>';
+  (t.res||[]).slice().reverse().forEach(function(x){o+=_trow('Resistance'+(x.n>1?' &times;'+x.n:''),'<span style="color:'+R+'">'+CUR+x.v.toFixed(2)+'</span> '+d(x.v));});
+  o+='<div style="display:flex;justify-content:space-between;font-size:10px;margin:5px 0;padding:3px 0;border-top:1px dashed #3d5a78;border-bottom:1px dashed #3d5a78"><span style="color:#e8f0fe;font-weight:700">Price</span><span style="font-family:JetBrains Mono;font-weight:700;color:#e8f0fe">'+CUR+px.toFixed(2)+'</span></div>';
+  (t.sup||[]).forEach(function(x){o+=_trow('Support'+(x.n>1?' &times;'+x.n:''),'<span style="color:'+G+'">'+CUR+x.v.toFixed(2)+'</span> '+d(x.v));});
+  if(!(t.res||[]).length)o+='<div style="font-size:9.5px;color:'+G+';margin-top:4px">No swing resistance overhead in 6 months.</div>';
+  if(t.fib){var f=t.fib;
+    o+='<div style="font-weight:800;font-size:9px;color:var(--text);margin:10px 0 4px;letter-spacing:.5px">FIBONACCI <span style="color:'+M+';font-weight:400">('+(f.up?'pullback of 60D rise':'bounce of 60D fall')+')</span></div>';
+    ['0.236','0.382','0.5','0.618','0.786'].forEach(function(k){var v=f.lv[k];if(!_num(v))return;var near=Math.abs(v-px)/px<0.015;
+      o+=_trow((parseFloat(k)*100).toFixed(1)+'%',(near?'<span style="color:#ff9f43">&#9679; </span>':'')+CUR+v.toFixed(2)+' '+d(v));});
+  }
+  if(t.pivots){var p=t.pivots;
+    o+='<div style="font-weight:800;font-size:9px;color:var(--text);margin:10px 0 4px;letter-spacing:.5px">PIVOT POINTS <span style="color:'+M+';font-weight:400">(next session)</span></div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;font-size:9.5px;font-family:JetBrains Mono;text-align:center">'+
+      ['R3','R2','R1','S1','S2','S3'].map(function(k){return '<div style="background:#0a1120;border-radius:3px;padding:2px"><div style="color:'+M+';font-size:8px">'+k+'</div><div style="color:'+(k[0]==='R'?R:G)+'">'+(_num(p[k])?p[k].toFixed(2):'-')+'</div></div>';}).join('')+
+      '</div>'+_trow('Pivot (P)',CUR+(_num(p.P)?p.P.toFixed(2):'-'),px>=p.P?_tag('ABOVE',G):_tag('BELOW',R));
+  }
+  return o+'</div>';
+}
+function volStatsHTML(r){
+  var t=r.tech||{},G='#00d084',R='#ff4757',A='#ff9f43',M='#5a7a9a';
+  if(!_num(t.hv20))return '';
+  var o='<div class="abox" style="margin-top:12px;padding:12px;font-size:11px;border-left-color:#3b82f6;line-height:1.5"><strong style="color:#3b82f6;display:block;margin-bottom:4px;font-size:10.5px">VOLATILITY &amp; RISK</strong>';
+  var hvc=t.hv20<t.hv60*0.8?G:t.hv20>t.hv60*1.2?R:'#e8f0fe';
+  o+=_trow('Hist. vol 20D / 60D / 1Y','<span style="color:'+hvc+'">'+t.hv20.toFixed(0)+'%</span> / '+t.hv60.toFixed(0)+'% / '+t.hv250.toFixed(0)+'%',t.hv20<t.hv60*0.8?_tag('CONTRACTING',G):t.hv20>t.hv60*1.2?_tag('EXPANDING',R):'');
+  if(_num(t.adr20))o+=_trow('Avg daily range (20D)',t.adr20.toFixed(1)+'%');
+  if(_num(t.beta))o+=_trow('Beta vs S&amp;P 500',t.beta.toFixed(2),t.beta>1.3?_tag('HIGH',A):t.beta<0.8?_tag('LOW',G):'');
+  if(_num(t.corr))o+=_trow('Correlation to S&amp;P',t.corr.toFixed(2));
+  if(_num(t.maxDD))o+=_trow('Max drawdown (1Y)','<span style="color:'+R+'">'+t.maxDD.toFixed(1)+'%</span>'+(_num(t.spyMaxDD)?' <span style="color:'+M+';font-weight:400">SPY '+t.spyMaxDD.toFixed(1)+'%</span>':''));
+  if(_num(t.curDD))o+=_trow('Off 1Y peak','<span style="color:'+(t.curDD>-10?G:t.curDD>-25?A:R)+'">'+t.curDD.toFixed(1)+'%</span>');
+  o+='<div style="margin-top:8px;padding-top:6px;border-top:1px solid #3b82f633;font-weight:800;font-size:9px;color:var(--text);letter-spacing:.5px">LAST 60 SESSIONS</div>';
+  if(_num(t.upDays60))o+=_trow('Up days',t.upDays60.toFixed(0)+'%',t.upDays60>=55?_tag('BUYERS',G):t.upDays60<=45?_tag('SELLERS',R):'');
+  if(_num(t.bestDay60))o+=_trow('Best / worst day','<span style="color:'+G+'">+'+t.bestDay60.toFixed(1)+'%</span> / <span style="color:'+R+'">'+t.worstDay60.toFixed(1)+'%</span>');
+  if(_num(t.gapUps))o+=_trow('Gaps over 2%','<span style="color:'+G+'">'+t.gapUps+' up</span> / <span style="color:'+R+'">'+t.gapDowns+' down</span>');
+  if(_num(t.streak)&&t.streak!==0)o+=_trow('Current streak',Math.abs(t.streak)+' '+(t.streak>0?'up':'down')+' day'+(Math.abs(t.streak)>1?'s':''),t.streak>0?_tag('UP',G):_tag('DOWN',R));
+  return o+'</div>';
+}
 function fillFund(r){
   var out='';
   // Key stats
@@ -1289,6 +1366,9 @@ function det(r){
     pbHTML+tech2HTML(r)+
     \'</div>\';
 
+  chartCol=chartCol.slice(0,-6)+indChartsHTML(r)+\'</div>\';
+  sepaCol=sepaCol.slice(0,-6)+srHTML(r)+\'</div>\';
+  nuanceHTML=nuanceHTML.slice(0,-6)+volStatsHTML(r)+\'</div>\';
   return \'<div class=\"dpanel\">\'+chartCol+sepaCol+fundCol+vcpCol+tradeCol+nuanceHTML+\'</div>\';
 }
 
