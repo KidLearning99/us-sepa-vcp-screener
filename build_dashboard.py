@@ -470,6 +470,58 @@ function revTrendChip(trend){
   return e[0]?'<div class="'+e[0]+'">'+e[1]+'</div>':'';
 }
 
+function _num(v){return typeof v==='number'&&isFinite(v);}
+function _pc(v,d){if(!_num(v))return '<span style="color:#3d5a78">n/a</span>';var c=v>=0?'#00d084':'#ff4757';return '<span style="color:'+c+'">'+(v>=0?'+':'')+v.toFixed(d===undefined?1:d)+'%</span>';}
+function _kv(l,v){return '<tr><td class="mlb">'+l+'</td><td class="mgv">'+v+'</td></tr>';}
+function _barRow(lbl,v,scale){
+  if(!_num(v))return '';
+  var w=Math.min(Math.abs(v)/scale*50,50),c=v>=0?'#00d084':'#ff4757';
+  var bar='<div style="position:relative;height:5px;background:var(--bg4);border-radius:3px;margin-top:3px">'+
+    '<div style="position:absolute;left:50%;top:-2px;width:1px;height:9px;background:#3d5a78"></div>'+
+    '<div style="position:absolute;top:0;height:5px;border-radius:3px;background:'+c+';'+(v>=0?'left:50%':'right:50%')+';width:'+w+'%"></div></div>';
+  return '<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--muted)">'+lbl+'</span><strong style="font-family:JetBrains Mono">'+_pc(v)+'</strong></div>'+bar+'</div>';
+}
+function fillFund(r){
+  var out='';
+  // Key stats
+  var fwd=(_num(r.trailingEps)&&_num(r.forwardEps)&&r.trailingEps>0)?(r.forwardEps-r.trailingEps)/r.trailingEps*100:null;
+  out+='<div class="dh" style="margin-top:14px">Key Stats</div><table class="mat">'+
+    _kv('Mkt Cap',r.mktcapFmt||'n/a')+
+    _kv('Net Margin',_num(r.netMargin)?_pc(r.netMargin):'<span style="color:#3d5a78">n/a</span>')+
+    _kv('EPS (TTM)',_num(r.trailingEps)?CUR+r.trailingEps.toFixed(2):'n/a')+
+    _kv('EPS (Fwd)',_num(r.forwardEps)?CUR+r.forwardEps.toFixed(2):'n/a')+
+    _kv('Fwd EPS chg',_pc(fwd))+
+    '</table>';
+  if(r.sector)out+='<div style="font-size:10px;color:#4a6a8a;margin-top:4px">'+r.sector+'</div>';
+  // 52-week range
+  if(_num(r.lo52)&&_num(r.hi52)&&r.hi52>r.lo52&&_num(r.price)){
+    var pos=Math.max(0,Math.min(100,(r.price-r.lo52)/(r.hi52-r.lo52)*100));
+    out+='<div class="dh" style="margin-top:14px">52-Week Range</div>'+
+      '<div style="position:relative;height:6px;border-radius:3px;background:linear-gradient(90deg,#ff4757,#ff9f43,#00d084);opacity:.85"></div>'+
+      '<div style="position:relative;height:10px"><div style="position:absolute;left:calc('+pos+'% - 5px);top:1px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:7px solid #e8f0fe"></div></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:9.5px;font-family:JetBrains Mono;color:var(--muted)"><span>'+CUR+r.lo52.toFixed(2)+'</span><span style="color:#e8f0fe">'+CUR+r.price.toFixed(2)+'</span><span>'+CUR+r.hi52.toFixed(2)+'</span></div>'+
+      '<table class="mat" style="margin-top:4px">'+
+      _kv('Below high',_num(r.pctFromHigh)?'<span style="color:'+(r.pctFromHigh<=15?'#00d084':r.pctFromHigh<=25?'#ff9f43':'#ff4757')+'">'+r.pctFromHigh.toFixed(1)+'%</span>':'n/a')+
+      _kv('Above low',_num(r.pctAboveLow)?'<span style="color:'+(r.pctAboveLow>=25?'#00d084':'#ff9f43')+'">'+r.pctAboveLow.toFixed(1)+'%</span>':'n/a')+
+      '</table>';
+  }
+  // Price vs moving averages
+  if(_num(r.price)){
+    var d=function(m){return _num(m)&&m>0?(r.price-m)/m*100:null;};
+    out+='<div class="dh" style="margin-top:14px">Price vs Moving Avgs</div>'+
+      _barRow('vs MA50',d(r.ma50),25)+_barRow('vs MA150',d(r.ma150),40)+_barRow('vs MA200',d(r.ma200),50);
+  }
+  // Performance
+  out+='<div class="dh" style="margin-top:10px">Performance</div>'+
+    _barRow('Today',r.change,5)+_barRow('5 days',r.chg5d,15)+_barRow('60 days',r.chg60d,40)+_barRow('12 months',r.chg250d,100);
+  // Accumulation
+  if(_num(r.accDistRatio)){
+    var a=r.accDistRatio,ac=a>=1.2?'#00d084':a>=1?'#8bc34a':'#ff4757';
+    out+='<table class="mat" style="margin-top:2px">'+_kv('Up/Down vol (60D)','<span style="color:'+ac+'">'+a.toFixed(2)+'x</span>')+'</table>';
+  }
+  return out;
+}
+
 function revBars(quarters){
   if(!quarters||!Array.isArray(quarters)||!quarters.length)return'<div style="color:#253550;font-size:10px">No quarterly data</div>';
   var vals=quarters.slice(-5);
@@ -669,6 +721,7 @@ function det(r){
     '<tr><td class="mlb">Rev YoY</td><td class="mgv">'+fmtGrowth(rg)+'</td></tr>'+
     '<tr><td class="mlb">EPS Grw</td><td class="mgv">'+fmtGrowth(eg,10,0)+'</td></tr>'+
     '</table>'+
+    fillFund(r)+
     '</div>';
     
   var evHtml='<div class="ev-none">No upcoming events</div>';
