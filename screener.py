@@ -150,7 +150,7 @@ def download_chunk(tickers, period="1y"):
             # Drop rows with no close price (Yahoo sometimes returns a bar with
             # volume but NaN OHLC). One NaN bar breaks the dashboard's JS.
             df = raw[t].dropna(how='all').dropna(subset=['Close'])
-            if not df.empty and len(df) >= 60:
+            if not df.empty and len(df) >= 30:
                 result[t] = df
         except Exception:
             pass
@@ -503,7 +503,10 @@ def score_stock(ticker, hist):
         c_vol   = volr >= VOL_BREAKOUT
 
         sepa = sum([c_ma50, c_ma150, c_ma200, c_trend, c_high, c_low, c_vol])
-        if sepa < SEPA_MIN: return None
+        # Recent listings (under 200 sessions) cannot pass the MA150/MA200 checks
+        # yet, so they are always kept and tagged instead of being dropped.
+        ipo = len(closes) < 200
+        if sepa < SEPA_MIN and not ipo: return None
 
         vcp = min(sum([
             abs(chg5d)  < abs(chg10d),
@@ -673,6 +676,8 @@ def score_stock(ticker, hist):
             "candleSignals": candle_signals,
             "accDistRatio": acc_dist_ratio,
             "tech": technicals(hist),
+            "ipo": ipo, "sessions": int(len(closes)),
+            "listDate": str(hist.index[0].date()) if ipo else None,
             "checks": {"ma50": c_ma50, "ma150": c_ma150, "ma200": c_ma200,
                        "trend": c_trend, "high": c_high, "low": c_low, "vol": c_vol},
             # filled in later by enrich_stock
@@ -847,7 +852,7 @@ def fetch_all():
         print(f"  Price data: {pct}/{len(US_TICKERS)} tickers fetched, {len(hist_map)} with data")
         time.sleep(0.5)   # small pause between batches
 
-    print(f"Price history: {len(hist_map)} tickers with >=60 days data")
+    print(f"Price history: {len(hist_map)} tickers with >=30 days data")
 
     # S&P 500 benchmark for relative strength
     global SPY_CLOSE

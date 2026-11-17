@@ -48,6 +48,7 @@ def build(data, source="Yahoo Finance (live)", min_cap=5_000_000_000):
     breakouts = [r for r in data if r["status"] == "breakout"]
     pivots    = [r for r in data if r["status"] == "near-pivot"]
     watching  = [r for r in data if r["status"] == "watch"]
+    ipos      = [r for r in data if r.get("ipo")]
     stage1    = [r for r in data if r.get("stage") == 1]
     stage2    = [r for r in data if r.get("stage") == 2]
     stage3    = [r for r in data if r.get("stage") == 3]
@@ -372,6 +373,7 @@ footer{background:#040710;border-top:1px solid var(--border);padding:18px 24px;t
   <button class="fbtn" onclick="setF('breakout',this)">&#x1F7E2; Breakout ({len(breakouts)})</button>
   <button class="fbtn" onclick="setF('near-pivot',this)">&#x1F535; Near Pivot ({len(pivots)})</button>
   <button class="fbtn" onclick="setF('watch',this)">&#x1F7E1; Watch ({len(watching)})</button>
+  <button class="fbtn" onclick="setF('ipo',this)" title="Listed less than 200 sessions ago">&#x1F195; Recent IPOs ({len(ipos)})</button>
   <div class="tsep"></div>
   <button class="fbtn s2" id="tb-s2" onclick="setStageFilter(2,this)">S2 Advancing ({len(stage2)})</button>
   <button class="fbtn s1" id="tb-s1" onclick="setStageFilter(1,this)">S1 Neglect ({len(stage1)})</button>
@@ -689,6 +691,14 @@ function fillGaps(panel,pool){
     if(!placed)break;
   }
 }
+function ipoNote(r){
+  var t=r.tech||{},n=r.sessions||0;
+  var off=_num(r.pctFromHigh)?r.pctFromHigh.toFixed(1)+'% below its post-listing high':'';
+  return '<div class="abox" style="margin-bottom:10px;padding:10px;font-size:10.5px;line-height:1.5;border-left-color:#a78bfa;background:#a78bfa0f">'+
+    '<strong style="color:#a78bfa;display:block;font-size:10px;letter-spacing:.5px;margin-bottom:3px">RECENT IPO &middot; LISTED '+(r.listDate||'')+'</strong>'+
+    '<span style="color:var(--muted)">Only <strong style="color:#e8f0fe">'+n+' sessions</strong> of history. The MA150 / MA200 checks need 150-200 sessions, so they read as not met until then and the SEPA score understates it. '+
+    'Minervini judges new issues on their first base after listing instead: a tight, orderly consolidation that holds above the IPO-day low.'+(off?' It is '+off+'.':'')+'</span></div>';
+}
 function fillFund(r){
   var out='<div class="mv">';
   // Key stats
@@ -836,7 +846,8 @@ function render(){
       q=document.getElementById('srch').value.toLowerCase(),
       sec=document.getElementById('sec').value;
   var d=D.filter(function(r){
-    if(filt!=='all'&&r.status!==filt)return false;
+    if(filt==='ipo'){if(!r.ipo)return false;}
+    else if(filt!=='all'&&r.status!==filt)return false;
     if(stageFilt&&r.stage!==stageFilt)return false;
     if(sec&&r.sector!==sec)return false;
     if(q&&!r.ticker.toLowerCase().includes(q)&&!r.name.toLowerCase().includes(q))return false;
@@ -890,7 +901,7 @@ function row(r,i){
   }
   return '<tr class="main-row" onclick="tog('+i+')" id="mr'+i+'">'+
     '<td style="color:#253550;font-size:10px">'+(i+1)+'</td>'+
-    '<td><div class="tkr">'+r.ticker+'</div><div class="co" title="'+r.name+'">'+r.name+'</div></td>'+
+    '<td><div class="tkr">'+r.ticker+(r.ipo?'<span style="font-size:8px;font-weight:800;color:#a78bfa;border:1px solid #a78bfa66;background:#a78bfa14;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Listed '+r.listDate+' - '+r.sessions+' sessions">IPO</span>':'')+'</div><div class="co" title="'+r.name+'">'+r.name+'</div></td>'+
     '<td>'+stageBdg+'</td>'+
     '<td>'+bdg+'</td>'+
     '<td><div style="display:flex;align-items:center;gap:3px"><div class="pips">'+ps+'</div><span style="font-size:10px;color:var(--muted)">'+sc+'</span></div></td>'+
@@ -1412,6 +1423,7 @@ function det(r){
     \'</div>\';
 
   chartCol=chartCol.slice(0,-6)+indChartsHTML(r)+\'</div>\';
+  if(r.ipo)sepaCol=sepaCol.slice(0,5)+ipoNote(r)+sepaCol.slice(5);
   sepaCol=sepaCol.slice(0,-6)+srHTML(r)+\'</div>\';
   nuanceHTML=nuanceHTML.slice(0,-6)+volStatsHTML(r)+\'</div>\';
   return \'<div class=\"dpanel\">\'+chartCol+sepaCol+fundCol+vcpCol+tradeCol+nuanceHTML+\'<div class=\"xpool\" style=\"display:none\">\'+extraCards(r).join(\'\')+\'</div></div>\';
@@ -1459,6 +1471,7 @@ render();
     html = html.replace("{len(breakouts)}", str(len(breakouts)))
     html = html.replace("{len(pivots)}", str(len(pivots)))
     html = html.replace("{len(watching)}", str(len(watching)))
+    html = html.replace("{len(ipos)}", str(len(ipos)))
     html = html.replace("{len(stage1)}", str(len(stage1)))
     html = html.replace("{len(stage2)}", str(len(stage2)))
     html = html.replace("{len(stage3)}", str(len(stage3)))
