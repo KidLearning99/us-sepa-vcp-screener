@@ -33,11 +33,15 @@ def build(data, source="Yahoo Finance (live)", min_cap=5_000_000_000):
         raise TypeError(repr(o))
 
     def _clean(obj):
+        if isinstance(obj, float) and obj != obj:  # NaN -> null (valid JSON)
+            return None
         if isinstance(obj, str):  return obj.encode('utf-8', errors='replace').decode('utf-8')
         if isinstance(obj, dict): return {k: _clean(v) for k, v in obj.items()}
         if isinstance(obj, list): return [_clean(v) for v in obj]
         return obj
     data = [_clean(r) for r in data]
+    for r in data:  # drop any candle with a missing value so charts/maths never see null
+        r["ohlcv"] = [c for c in (r.get("ohlcv") or []) if all(v is not None for v in c)]
     json_data = json.dumps(data, default=_jsafe)
 
     n        = len(data)
@@ -852,13 +856,14 @@ function det(r){
   candleSigsHTML += \'</div>\';
 
   var _oc = r.ohlcv || [];
-  var _cl = _oc.map(function(x){return x[3];});
-  var _hi = _oc.map(function(x){return x[1];});
+  var _cl = _oc.map(function(x){return x[3];}).filter(function(v){return typeof v==='number'&&isFinite(v);});
+  var _hi = _oc.map(function(x){return x[1];}).filter(function(v){return typeof v==='number'&&isFinite(v);});
   var _vo = _oc.map(function(x){return x[4];});
   var _mean = function(a){ if(!a.length) return 0; var t=0; for(var q=0;q<a.length;q++)t+=a[q]; return t/a.length; };
   var _back = function(n){ if(_cl.length>n){ var o=_cl[_cl.length-1-n]; return o>0 ? (r.price-o)/o*100 : null; } return null; };
   var _c10=_back(10), _c20=_back(20);
   var _pivot = _hi.length>=20 ? Math.max.apply(null,_hi.slice(-20)) : null;
+  if(_pivot!==null && !(_pivot>0)) _pivot=null;
   var _toPivot = _pivot ? (_pivot-r.price)/r.price*100 : null;
   var _v5 = _vo.length>=5 ? _mean(_vo.slice(-5)) : null;
   var _vAll = _vo.length ? _mean(_vo) : null;

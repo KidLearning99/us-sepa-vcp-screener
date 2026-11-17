@@ -138,13 +138,16 @@ def download_chunk(tickers, period="1y"):
     result = {}
     if len(tickers) == 1:
         t = tickers[0]
+        raw = raw.dropna(subset=['Close']) if not raw.empty else raw
         if not raw.empty:
             result[t] = raw
         return result
 
     for t in tickers:
         try:
-            df = raw[t].dropna(how='all')
+            # Drop rows with no close price (Yahoo sometimes returns a bar with
+            # volume but NaN OHLC). One NaN bar breaks the dashboard's JS.
+            df = raw[t].dropna(how='all').dropna(subset=['Close'])
             if not df.empty and len(df) >= 60:
                 result[t] = df
         except Exception:
@@ -572,6 +575,14 @@ if __name__ == "__main__":
     p = sum(1 for r in data if r['status'] == 'near-pivot')
     w = sum(1 for r in data if r['status'] == 'watch')
     print(f"Results: {len(data)} | Breakouts:{b} | NearPivot:{p} | Watch:{w}")
+    import math
+    bad = sum(1 for r in data if not isinstance(r.get('price'), (int, float))
+              or not math.isfinite(r['price']))
+    if data and bad > len(data) * 0.05:
+        import sys
+        print(f"ERROR: {bad}/{len(data)} rows have no valid price - refusing to "
+              "publish a broken dashboard.")
+        sys.exit(1)
     if not data:
         import sys
         print("ERROR: screener returned 0 rows — refusing to overwrite the "
