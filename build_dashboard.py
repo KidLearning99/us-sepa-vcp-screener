@@ -481,6 +481,52 @@ function _barRow(lbl,v,scale){
     '<div style="position:absolute;top:0;height:5px;border-radius:3px;background:'+c+';'+(v>=0?'left:50%':'right:50%')+';width:'+w+'%"></div></div>';
   return '<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--muted)">'+lbl+'</span><strong style="font-family:JetBrains Mono">'+_pc(v)+'</strong></div>'+bar+'</div>';
 }
+function _tag(txt,c){return '<span style="font-size:8.5px;font-weight:700;color:'+c+';border:1px solid '+c+'55;background:'+c+'14;border-radius:3px;padding:0 4px;margin-left:5px">'+txt+'</span>';}
+function _gauge(v,lo,hi){
+  if(!_num(v))return '';
+  var p=Math.max(0,Math.min(100,v));
+  return '<div style="position:relative;height:5px;border-radius:3px;margin:3px 0 7px;background:linear-gradient(90deg,#00d084 0,#00d084 '+lo+'%,#1e2d45 '+lo+'%,#1e2d45 '+hi+'%,#ff4757 '+hi+'%,#ff4757 100%);opacity:.8">'+
+    '<div style="position:absolute;left:calc('+p+'% - 1px);top:-3px;width:3px;height:11px;border-radius:1px;background:#e8f0fe"></div></div>';
+}
+function _trow(lbl,val,tag){return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;margin-top:5px"><span style="color:var(--muted)">'+lbl+'</span><span style="font-family:JetBrains Mono;font-weight:700;color:#e8f0fe;white-space:nowrap">'+val+(tag||'')+'</span></div>';}
+function techHTML(r){
+  var t=r.tech||{}; if(!Object.keys(t).length)return '';
+  var G='#00d084',A='#ff9f43',R='#ff4757',B='#3b82f6',M='#5a7a9a';
+  var o='<div class="dh" style="margin-top:14px">Technical Indicators</div>';
+  if(_num(t.rsi)){
+    var rt=t.rsi>=70?_tag('OVERBOUGHT',R):t.rsi<=30?_tag('OVERSOLD',G):t.rsi>=50?_tag('BULLISH',G):_tag('WEAK',A);
+    o+=_trow('RSI (14)',t.rsi.toFixed(1),rt)+_gauge(t.rsi,30,70);
+  }
+  if(_num(t.stochK)){
+    var st=t.stochK>=80?_tag('OVERBOUGHT',R):t.stochK<=20?_tag('OVERSOLD',G):(_num(t.stochD)&&t.stochK>t.stochD?_tag('RISING',G):_tag('FALLING',A));
+    o+=_trow('Stoch %K / %D',t.stochK.toFixed(0)+' / '+(_num(t.stochD)?t.stochD.toFixed(0):'-'),st)+_gauge(t.stochK,20,80);
+  }
+  if(_num(t.macdHist)){
+    var mt=t.macdHist>0?(t.macdHist>=(t.macdHistPrev||0)?_tag('BULL RISING',G):_tag('BULL FADING',A)):(t.macdHist<=(t.macdHistPrev||0)?_tag('BEAR FALLING',R):_tag('BEAR EASING',A));
+    o+=_trow('MACD hist',(t.macdHist>=0?'+':'')+t.macdHist.toFixed(2),mt);
+    o+=_trow('MACD / signal',t.macd.toFixed(2)+' / '+t.macdSignal.toFixed(2),t.macdCross?_tag(t.macdCross.toUpperCase(),t.macdCross.indexOf('bull')===0?G:R):'');
+  }
+  if(_num(t.adx)){
+    var at=t.adx>=25?(t.plusDI>=t.minusDI?_tag('STRONG UP',G):_tag('STRONG DOWN',R)):_tag('NO TREND',M);
+    o+=_trow('ADX (14)',t.adx.toFixed(0),at);
+    if(_num(t.plusDI))o+=_trow('+DI / -DI','<span style="color:'+G+'">'+t.plusDI.toFixed(0)+'</span> / <span style="color:'+R+'">'+t.minusDI.toFixed(0)+'</span>');
+  }
+  if(_num(t.atrPct))o+=_trow('ATR (14)',CUR+t.atr.toFixed(2)+' &middot; '+t.atrPct.toFixed(1)+'%',t.atrPct>5?_tag('VOLATILE',A):t.atrPct<2?_tag('QUIET',G):'');
+  if(_num(t.bbPctB)){
+    o+=_trow('Bollinger %B',t.bbPctB.toFixed(0)+'%',t.bbPctB>100?_tag('ABOVE BAND',A):t.bbPctB<0?_tag('BELOW BAND',R):'');
+    if(_num(t.bbWidth)){
+      var sq=_num(t.bbWidthPctile)&&t.bbWidthPctile<=20;
+      o+=_trow('Band width',t.bbWidth.toFixed(1)+'%'+(_num(t.bbWidthPctile)?' <span style="color:'+M+';font-weight:400">p'+t.bbWidthPctile.toFixed(0)+'</span>':''),sq?_tag('SQUEEZE',B):'');
+    }
+  }
+  if(_num(t.rs3m)||_num(t.rs12m)){
+    o+='<div class="dh" style="margin-top:14px">Relative Strength vs S&amp;P 500</div>';
+    o+=_barRow('3 months',t.rs3m,40)+_barRow('6 months',t.rs6m,60)+_barRow('12 months',t.rs12m,100);
+    if(t.rsLineHigh)o+='<div style="font-size:10px;color:'+G+';font-weight:700;margin-top:-2px">&#9650; RS line at a 52-week high</div>';
+  }
+  o+='<div style="font-size:9px;color:#3d5a78;margin-top:8px;line-height:1.5">Calculated from 1 year of daily closes. Tags are rules of thumb, not signals on their own.</div>';
+  return o;
+}
 function fillFund(r){
   var out='';
   // Key stats
@@ -519,6 +565,7 @@ function fillFund(r){
     var a=r.accDistRatio,ac=a>=1.2?'#00d084':a>=1?'#8bc34a':'#ff4757';
     out+='<table class="mat" style="margin-top:2px">'+_kv('Up/Down vol (60D)','<span style="color:'+ac+'">'+a.toFixed(2)+'x</span>')+'</table>';
   }
+  out+=techHTML(r);
   return out;
 }
 

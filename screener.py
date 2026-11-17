@@ -138,6 +138,8 @@ def download_chunk(tickers, period="1y"):
     result = {}
     if len(tickers) == 1:
         t = tickers[0]
+        if not raw.empty and isinstance(raw.columns, pd.MultiIndex):
+            raw = raw[t] if t in raw.columns.get_level_values(0) else raw.droplevel(0, axis=1)
         raw = raw.dropna(subset=['Close']) if not raw.empty else raw
         if not raw.empty:
             result[t] = raw
@@ -153,6 +155,101 @@ def download_chunk(tickers, period="1y"):
         except Exception:
             pass
     return result
+
+# ── Technical indicators from the full price history ─────────────────────────
+SPY_CLOSE = None   # S&P 500 (SPY) closes, set in fetch_all for relative strength
+
+def technicals(hist):
+    """RSI, MACD, Stochastic, ATR, Bollinger, ADX and RS vs SPY. Each value is
+    None when there is not enough history, so the dashboard shows n/a."""
+    out = {}
+    def _r(v, d=2):
+        try:
+            v = float(v)
+            return round(v, d) if v == v and abs(v) != float("inf") else None
+        except Exception:
+            return None
+    try:
+        c = hist["Close"].astype(float)
+        h = hist["High"].astype(float) if "High" in hist else c
+        l = hist["Low"].astype(float) if "Low" in hist else c
+
+        # RSI(14), Wilder smoothing
+        if len(c) > 15:
+            d = c.diff()
+            gain = d.clip(lower=0).ewm(alpha=1/14, adjust=False).mean()
+            loss = (-d.clip(upper=0)).ewm(alpha=1/14, adjust=False).mean()
+            rs = gain / loss.replace(0, float("nan"))
+            rsi = 100 - 100 / (1 + rs)
+            out["rsi"] = _r(rsi.iloc[-1], 1)
+
+        # MACD(12,26,9)
+        if len(c) > 35:
+            macd = c.ewm(span=12, adjust=False).mean() - c.ewm(span=26, adjust=False).mean()
+            sig = macd.ewm(span=9, adjust=False).mean()
+            hst = macd - sig
+            out["macd"] = _r(macd.iloc[-1], 3)
+            out["macdSignal"] = _r(sig.iloc[-1], 3)
+            out["macdHist"] = _r(hst.iloc[-1], 3)
+            out["macdHistPrev"] = _r(hst.iloc[-2], 3)
+            cross = None
+            for k in range(1, 6):   # crossover within the last 5 sessions
+                if hst.iloc[-k] > 0 >= hst.iloc[-k - 1]: cross = f"bull {k - 1}d ago"; break
+                if hst.iloc[-k] < 0 <= hst.iloc[-k - 1]: cross = f"bear {k - 1}d ago"; break
+            out["macdCross"] = cross
+
+        # Stochastic %K(14) / %D(3)
+        if len(c) > 17:
+            ll, hh = l.rolling(14).min(), h.rolling(14).max()
+            k = 100 * (c - ll) / (hh - ll).replace(0, float("nan"))
+            out["stochK"] = _r(k.iloc[-1], 1)
+            out["stochD"] = _r(k.rolling(3).mean().iloc[-1], 1)
+
+        # ATR(14) and ATR as % of price
+        tr = pd.concat([h - l, (h - c.shift()).abs(), (l - c.shift()).abs()], axis=1).max(axis=1)
+        if len(c) > 15:
+            atr = tr.ewm(alpha=1/14, adjust=False).mean()
+            out["atr"] = _r(atr.iloc[-1], 2)
+            out["atrPct"] = _r(atr.iloc[-1] / c.iloc[-1] * 100, 2)
+
+        # Bollinger(20,2): %B, bandwidth, and bandwidth percentile over 120 sessions
+        if len(c) > 20:
+            m = c.rolling(20).mean(); sd = c.rolling(20).std()
+            up, lo = m + 2 * sd, m - 2 * sd
+            bw = (up - lo) / m * 100
+            out["bbPctB"] = _r((c.iloc[-1] - lo.iloc[-1]) / (up.iloc[-1] - lo.iloc[-1]) * 100, 0)
+            out["bbWidth"] = _r(bw.iloc[-1], 1)
+            win = bw.dropna().tail(120)
+            if len(win) >= 40:
+                out["bbWidthPctile"] = _r((win < win.iloc[-1]).mean() * 100, 0)
+
+        # ADX(14) with +DI / -DI
+        if len(c) > 30:
+            upm, dnm = h.diff(), -l.diff()
+            pdm = upm.where((upm > dnm) & (upm > 0), 0.0)
+            ndm = dnm.where((dnm > upm) & (dnm > 0), 0.0)
+            atr_w = tr.ewm(alpha=1/14, adjust=False).mean()
+            pdi = 100 * pdm.ewm(alpha=1/14, adjust=False).mean() / atr_w
+            ndi = 100 * ndm.ewm(alpha=1/14, adjust=False).mean() / atr_w
+            dx = 100 * (pdi - ndi).abs() / (pdi + ndi).replace(0, float("nan"))
+            out["adx"] = _r(dx.ewm(alpha=1/14, adjust=False).mean().iloc[-1], 1)
+            out["plusDI"] = _r(pdi.iloc[-1], 1)
+            out["minusDI"] = _r(ndi.iloc[-1], 1)
+
+        # Relative strength vs S&P 500 (SPY): stock return minus SPY return
+        if SPY_CLOSE is not None:
+            spy = SPY_CLOSE.reindex(c.index).ffill()
+            for n, key in ((63, "rs3m"), (126, "rs6m"), (len(c) - 1, "rs12m")):
+                if len(c) > n and n > 0 and spy.iloc[-1 - n] == spy.iloc[-1 - n]:
+                    sr = c.iloc[-1] / c.iloc[-1 - n] - 1
+                    br = spy.iloc[-1] / spy.iloc[-1 - n] - 1
+                    out[key] = _r((sr - br) * 100, 1)
+            ratio = (c / spy).dropna()
+            if len(ratio) >= 50:
+                out["rsLineHigh"] = bool(ratio.iloc[-1] >= ratio.tail(250).max() * 0.995)
+    except Exception as e:
+        out["error"] = str(e)[:80]
+    return out
 
 # ── Score one ticker from its price dataframe ─────────────────────────────────
 def score_stock(ticker, hist):
@@ -368,6 +465,7 @@ def score_stock(ticker, hist):
             "ohlcv": ohlcv,
             "candleSignals": candle_signals,
             "accDistRatio": acc_dist_ratio,
+            "tech": technicals(hist),
             "checks": {"ma50": c_ma50, "ma150": c_ma150, "ma200": c_ma200,
                        "trend": c_trend, "high": c_high, "low": c_low, "vol": c_vol},
             # filled in later by enrich_stock
@@ -543,6 +641,18 @@ def fetch_all():
         time.sleep(0.5)   # small pause between batches
 
     print(f"Price history: {len(hist_map)} tickers with >=60 days data")
+
+    # S&P 500 benchmark for relative strength
+    global SPY_CLOSE
+    try:
+        spy = download_chunk(["SPY"]).get("SPY")
+        if spy is not None and not spy.empty:
+            SPY_CLOSE = spy["Close"].astype(float)
+            if hasattr(SPY_CLOSE, "columns"):   # yfinance may return a 1-col frame
+                SPY_CLOSE = SPY_CLOSE.iloc[:, 0]
+            print(f"SPY benchmark: {len(SPY_CLOSE)} sessions")
+    except Exception as e:
+        print(f"SPY benchmark unavailable: {e}")
 
     # Step 2: score all stocks from price data (CPU only, no network)
     candidates = []
