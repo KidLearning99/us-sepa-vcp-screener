@@ -527,6 +527,49 @@ function techHTML(r){
   o+='<div style="font-size:9px;color:#3d5a78;margin-top:8px;line-height:1.5">Calculated from 1 year of daily closes. Tags are rules of thumb, not signals on their own.</div>';
   return o;
 }
+function tech2HTML(r){
+  var t=r.tech||{}; if(!Object.keys(t).length)return '';
+  var G='#00d084',A='#ff9f43',R='#ff4757',M='#5a7a9a',B='#3b82f6';
+  var o='<div class="abox" style="margin-top:10px;padding:10px;line-height:1.5">';
+  var hd=function(x,top){return '<div style="font-weight:800;font-size:9px;color:var(--text);margin:'+(top?0:10)+'px 0 4px;letter-spacing:.5px">'+x+'</div>';};
+  // Moving-average stack
+  var m=t.mas||{},names=[['ema10','EMA 10'],['ema21','EMA 21'],['sma20','SMA 20'],['sma50','SMA 50'],['sma100','SMA 100'],['sma200','SMA 200']];
+  var above=0,tot=0;
+  o+=hd('MOVING AVERAGES',1);
+  names.forEach(function(n){var x=m[n[0]];if(!x||!_num(x.v))return;tot++;if(x.d>=0)above++;
+    var ar=_num(x.slope)?(x.slope>0?'<span style="color:'+G+'">&#9650;</span>':x.slope<0?'<span style="color:'+R+'">&#9660;</span>':''):'';
+    o+=_trow(n[1]+' '+ar,CUR+x.v.toFixed(2)+' <span style="color:'+(x.d>=0?G:R)+';font-weight:400">'+(x.d>=0?'+':'')+x.d.toFixed(1)+'%</span>');});
+  if(tot){var ok=_num((m.ema10||{}).v)&&_num((m.ema21||{}).v)&&_num((m.sma50||{}).v)&&m.ema10.v>m.ema21.v&&m.ema21.v>m.sma50.v;
+    o+='<div style="font-size:9.5px;margin-top:4px;color:'+(above===tot?G:above>=tot/2?A:R)+'">Price above '+above+' of '+tot+(ok?' &middot; short MAs stacked bullish':'')+'</div>';}
+  // Oscillators
+  o+=hd('MOMENTUM');
+  if(_num(t.willR))o+=_trow('Williams %R',t.willR.toFixed(0),t.willR>-20?_tag('OVERBOUGHT',R):t.willR<-80?_tag('OVERSOLD',G):'');
+  if(_num(t.cci))o+=_trow('CCI (20)',t.cci.toFixed(0),t.cci>100?_tag('STRONG',G):t.cci<-100?_tag('WEAK',R):'');
+  if(_num(t.roc10))o+=_trow('ROC 10 / 20',_pc(t.roc10)+' / '+_pc(t.roc20));
+  // Volume-based
+  o+=hd('MONEY FLOW');
+  if(_num(t.mfi))o+=_trow('MFI (14)',t.mfi.toFixed(0),t.mfi>=80?_tag('OVERBOUGHT',R):t.mfi<=20?_tag('OVERSOLD',G):t.mfi>=50?_tag('INFLOW',G):_tag('OUTFLOW',A))+_gauge(t.mfi,20,80);
+  if(_num(t.obvTrend))o+=_trow('OBV',(t.obvTrend>=0?'+':'')+t.obvTrend.toFixed(1)+'x',t.obvTrend>0?_tag('ACCUMULATING',G):_tag('DISTRIBUTING',R));
+  // Trend tools
+  o+=hd('TREND');
+  if(_num(t.sar))o+=_trow('Parabolic SAR',CUR+t.sar.toFixed(2),t.sarBull?_tag('UP '+t.sarAge+'D',G):_tag('DOWN '+t.sarAge+'D',R));
+  if(t.ichi)o+=_trow('Ichimoku cloud',t.ichi==='above'?'<span style="color:'+G+'">Above</span>':t.ichi==='below'?'<span style="color:'+R+'">Below</span>':'<span style="color:'+A+'">Inside</span>',t.tkCross==='bull'?_tag('TK BULL',G):_tag('TK BEAR',R));
+  if(_num(t.keltPos))o+=_trow('Keltner position',t.keltPos.toFixed(0)+'%',t.keltPos>100?_tag('ABOVE',A):t.keltPos<0?_tag('BELOW',R):'');
+  if(_num(t.donHi))o+=_trow('20D channel',CUR+t.donLo.toFixed(2)+' - '+CUR+t.donHi.toFixed(2),t.donBreak==='up'?_tag('NEW HIGH',G):t.donBreak==='down'?_tag('NEW LOW',R):'');
+  // Overall tally
+  var bu=0,be=0,f=function(c){if(c===true)bu++;else if(c===false)be++;};
+  f(_num(t.rsi)?t.rsi>=50:null);f(_num(t.macdHist)?t.macdHist>0:null);f(_num(t.stochK)&&_num(t.stochD)?t.stochK>t.stochD:null);
+  f(_num(t.plusDI)?t.plusDI>t.minusDI:null);f(_num(t.mfi)?t.mfi>=50:null);f(_num(t.obvTrend)?t.obvTrend>0:null);
+  f(typeof t.sarBull==='boolean'?t.sarBull:null);f(t.ichi==='above'?true:t.ichi==='below'?false:null);f(_num(t.cci)?t.cci>0:null);
+  f(tot?above>tot/2:null);
+  var n=bu+be;
+  if(n){var pct=bu/n*100,col=pct>=70?G:pct>=40?A:R,lbl=pct>=70?'MOSTLY BULLISH':pct>=40?'MIXED':'MOSTLY BEARISH';
+    o+=hd('INDICATOR TALLY')+
+      '<div style="display:flex;height:7px;border-radius:4px;overflow:hidden;background:#1e2d45"><div style="width:'+pct+'%;background:'+G+'"></div><div style="flex:1;background:'+R+'"></div></div>'+
+      _trow('<span style="color:'+G+'">'+bu+' bullish</span> / <span style="color:'+R+'">'+be+' bearish</span>','',_tag(lbl,col));}
+  o+='</div>';
+  return o;
+}
 function fillFund(r){
   var out='';
   // Key stats
@@ -1243,7 +1286,7 @@ function det(r){
     \'<div class=\"abox\" style=\"margin-top:6px;padding:10px;line-height:1.6\">\'+
     \'<div style=\"font-weight:800;font-size:9px;color:var(--text);margin-bottom:6px;letter-spacing:0.5px\">SUMMARY</div>\'+(r.analysis || \"Awaiting breakout confirmation.\")+
     \'<div class=\"aact \'+ac+\'\" style=\"margin-top:8px\">\'+at+\'</div></div>\'+
-    pbHTML+
+    pbHTML+tech2HTML(r)+
     \'</div>\';
 
   return \'<div class=\"dpanel\">\'+chartCol+sepaCol+fundCol+vcpCol+tradeCol+nuanceHTML+\'</div>\';

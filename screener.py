@@ -236,6 +236,78 @@ def technicals(hist):
             out["plusDI"] = _r(pdi.iloc[-1], 1)
             out["minusDI"] = _r(ndi.iloc[-1], 1)
 
+        # Second set: moving-average stack, oscillators, money flow, trend tools
+        px = c.iloc[-1]
+        mas = {}
+        for key, ser in (("ema10", c.ewm(span=10, adjust=False).mean()),
+                         ("ema21", c.ewm(span=21, adjust=False).mean()),
+                         ("sma20", c.rolling(20).mean()),
+                         ("sma50", c.rolling(50).mean()),
+                         ("sma100", c.rolling(100).mean()),
+                         ("sma200", c.rolling(200).mean())):
+            v = ser.iloc[-1]
+            if v == v:
+                mas[key] = {"v": _r(v, 2), "d": _r((px / v - 1) * 100, 1),
+                            "slope": _r((v / ser.iloc[-6] - 1) * 100, 2) if len(ser) > 6 and ser.iloc[-6] == ser.iloc[-6] else None}
+        out["mas"] = mas
+
+        if len(c) > 20:   # Williams %R(14), CCI(20), ROC(10/20)
+            ll, hh = l.rolling(14).min(), h.rolling(14).max()
+            out["willR"] = _r(-100 * (hh.iloc[-1] - px) / (hh.iloc[-1] - ll.iloc[-1]), 1) if hh.iloc[-1] > ll.iloc[-1] else None
+            tp = (h + l + c) / 3
+            md = tp.rolling(20).apply(lambda x: abs(x - x.mean()).mean(), raw=True)
+            out["cci"] = _r((tp.iloc[-1] - tp.rolling(20).mean().iloc[-1]) / (0.015 * md.iloc[-1]), 0) if md.iloc[-1] else None
+            out["roc10"] = _r((px / c.iloc[-11] - 1) * 100, 1)
+            out["roc20"] = _r((px / c.iloc[-21] - 1) * 100, 1)
+
+        if "Volume" in hist and len(c) > 20:   # MFI(14) and OBV trend
+            v = hist["Volume"].astype(float)
+            tp = (h + l + c) / 3
+            rmf = tp * v
+            pos = rmf.where(tp > tp.shift(), 0.0).rolling(14).sum()
+            neg = rmf.where(tp < tp.shift(), 0.0).rolling(14).sum()
+            out["mfi"] = _r(100 - 100 / (1 + pos.iloc[-1] / neg.iloc[-1]), 1) if neg.iloc[-1] else _r(100.0, 1)
+            obv = (v * c.diff().apply(lambda x: 1 if x > 0 else (-1 if x < 0 else 0))).cumsum()
+            out["obvTrend"] = _r((obv.iloc[-1] - obv.iloc[-21]) / v.tail(20).mean(), 1) if v.tail(20).mean() else None
+
+        if len(c) > 30:   # Parabolic SAR (0.02 / 0.2)
+            af, mx = 0.02, 0.2
+            bull = True; sar = l.iloc[0]; ep = h.iloc[0]; a = af; flip = 0
+            for i in range(1, len(c)):
+                sar = sar + a * (ep - sar)
+                if bull:
+                    sar = min(sar, l.iloc[i - 1], l.iloc[i - 2] if i > 1 else l.iloc[i - 1])
+                    if l.iloc[i] < sar:
+                        bull, sar, ep, a, flip = False, ep, l.iloc[i], af, i
+                    elif h.iloc[i] > ep:
+                        ep, a = h.iloc[i], min(a + af, mx)
+                else:
+                    sar = max(sar, h.iloc[i - 1], h.iloc[i - 2] if i > 1 else h.iloc[i - 1])
+                    if h.iloc[i] > sar:
+                        bull, sar, ep, a, flip = True, ep, h.iloc[i], af, i
+                    elif l.iloc[i] < ep:
+                        ep, a = l.iloc[i], min(a + af, mx)
+            out["sar"] = _r(sar, 2); out["sarBull"] = bool(bull)
+            out["sarAge"] = int(len(c) - 1 - flip)
+
+        if len(c) > 52:   # Ichimoku: price vs cloud (cloud plotted 26 ahead, so use spans from 26 ago)
+            tenkan = (h.rolling(9).max() + l.rolling(9).min()) / 2
+            kijun = (h.rolling(26).max() + l.rolling(26).min()) / 2
+            spa = ((tenkan + kijun) / 2).shift(26)
+            spb = ((h.rolling(52).max() + l.rolling(52).min()) / 2).shift(26)
+            top, bot = max(spa.iloc[-1], spb.iloc[-1]), min(spa.iloc[-1], spb.iloc[-1])
+            if top == top and bot == bot:
+                out["ichi"] = "above" if px > top else ("below" if px < bot else "inside")
+                out["tkCross"] = "bull" if tenkan.iloc[-1] > kijun.iloc[-1] else "bear"
+
+        if len(c) > 21:   # Keltner(20, 2xATR10) and Donchian(20)
+            em = c.ewm(span=20, adjust=False).mean().iloc[-1]
+            at10 = tr.ewm(alpha=1/10, adjust=False).mean().iloc[-1]
+            out["keltPos"] = _r((px - (em - 2 * at10)) / (4 * at10) * 100, 0) if at10 else None
+            dh, dl = h.iloc[-21:-1].max(), l.iloc[-21:-1].min()
+            out["donHi"] = _r(dh, 2); out["donLo"] = _r(dl, 2)
+            out["donBreak"] = "up" if px > dh else ("down" if px < dl else None)
+
         # Relative strength vs S&P 500 (SPY): stock return minus SPY return
         if SPY_CLOSE is not None:
             spy = SPY_CLOSE.reindex(c.index).ffill()
