@@ -14,10 +14,11 @@ def fmt_pct(v):
 STAGE_COL = {1: "#5a7a9a", 2: "#00d084", 3: "#ff9f43", 4: "#ff4757"}
 STAGE_BG  = {1: "rgba(90,122,154,.1)", 2: "rgba(0,208,132,.1)", 3: "rgba(255,159,67,.1)", 4: "rgba(255,71,87,.1)"}
 STAGE_BD  = {1: "rgba(90,122,154,.3)", 2: "rgba(0,208,132,.3)", 3: "rgba(255,159,67,.3)", 4: "rgba(255,71,87,.3)"}
+BENCH_NAME = "S&amp;P 500"
 STAGE_LBL = {1: "S1 Neglect", 2: "S2 Advancing", 3: "S3 Topping", 4: "S4 Declining"}
 
 
-def build(data, source="Yahoo Finance (live)", min_cap=5_000_000_000):
+def build(data, source="Yahoo Finance (live)", min_cap=5_000_000_000, meta=None):
     MELBOURNE = ZoneInfo("Australia/Melbourne")
     NEW_YORK  = ZoneInfo("America/New_York")
     _now      = datetime.now(MELBOURNE)
@@ -68,7 +69,25 @@ def build(data, source="Yahoo Finance (live)", min_cap=5_000_000_000):
         adv = sum(c[3] * c[4] for c in tail) / len(tail) if tail else 0
         return lock < 2 and adv >= 1e6
 
-    top = sorted(
+    meta = meta or {}
+    mk, bt = meta.get("market") or {}, meta.get("backtest") or {}
+    act = lambda r: (r.get("decision") or {}).get("action")
+    n_buy, n_alert, n_sell = (sum(1 for r in data if act(r) == a) for a in ("BUY", "ALERT", "SELL"))
+    mcol = {"uptrend": "#00d084", "pressure": "#ff9f43", "correction": "#ff4757"}.get(mk.get("state"), "#8aa4c0")
+    mtxt = {"uptrend": "new buys allowed", "pressure": "buy only the best setups, smaller size", "correction": "no new buys until it recovers"}.get(mk.get("state"), "")
+    market_html = ""
+    if mk:
+        market_html = (f'<div style="margin:18px auto 0;max-width:820px;font-size:12px;color:var(--muted);line-height:1.7;'
+                       f'border:1px solid {mcol}55;background:{mcol}10;border-radius:8px;padding:9px 14px">'
+                       f'<b style="color:{mcol}">Market ({BENCH_NAME}): {mk.get("label","")}</b> &mdash; {mtxt}. '
+                       f'Index is {"above" if mk.get("above50") else "below"} its 50-day and {"above" if mk.get("above200") else "below"} its 200-day average, {abs(mk.get("offHigh") or 0):.1f}% off its 1-year high.'
+                       + (f'<br>Decision engine: <b style="color:#00d084">{n_buy} BUY</b> &middot; <b style="color:#3b82f6">{n_alert} SET ALERT</b> &middot; <b style="color:#ff4757">{n_sell} SELL</b>. '
+                          f'Backtest of the BUY rule over the past year: {bt.get("n",0)} trades, {bt.get("winRate","-")}% hit +{bt.get("target",20)}% before the stop, average {bt.get("avgRet",0):+.1f}% per trade.' if bt.get("n") else '')
+                       + '</div>')
+    _rank = {"BUY": 0, "ALERT": 1}
+    dec_top = sorted([r for r in data if act(r) in _rank and _tradeable(r)],
+                     key=lambda x: (_rank[act(x)], -x["sepaScore"], -x["vcpScore"], -(x.get("volRatio") or 0)))
+    top = dec_top[:10] if len(dec_top) >= 3 else sorted(
         [r for r in breakouts + [r for r in pivots if r["sepaScore"] >= 5] if _tradeable(r)],
         key=lambda x: (x["sepaScore"], x["vcpScore"], x["volRatio"]),
         reverse=True
@@ -366,11 +385,12 @@ footer{background:#040710;border-top:1px solid var(--border);padding:18px 24px;t
       &#x25cf; S4 Declining <strong>&nbsp;{len(stage4)}</strong>
     </div>
   </div>
+  {market_html}
 </div>
 
 <div class="section" id="picks">
   <div class="stitle">&#x1F3C6; Top 10 US Picks Today</div>
-  <div class="ssub">Highest-conviction SEPA + VCP + Stage 2 setups &mdash; ranked by combined score. Click any card to jump to full analysis with 60-day candlestick chart.</div>
+  <div class="ssub">BUY signals first, then SET ALERT, from the rule-based decision engine (thin and locked stocks excluded). Click any card to jump to full analysis with 60-day candlestick chart.</div>
   <div class="picks-grid">{top_html}</div>
   <p style="font-size:11px;color:var(--muted);margin-top:16px;line-height:1.7">
     <strong style="color:#c9d1d9">How to read:</strong> Green pips = SEPA score (7 max). Blue pips = VCP score (4 max).
@@ -385,6 +405,9 @@ footer{background:#040710;border-top:1px solid var(--border);padding:18px 24px;t
   <button class="fbtn" onclick="setF('breakout',this)">&#x1F7E2; Breakout ({len(breakouts)})</button>
   <button class="fbtn" onclick="setF('near-pivot',this)">&#x1F535; Near Pivot ({len(pivots)})</button>
   <button class="fbtn" onclick="setF('watch',this)">&#x1F7E1; Watch ({len(watching)})</button>
+  <button class="fbtn" onclick="setF('d:BUY',this)" style="border-color:#00d08466;color:#00d084">&#x2705; Buy ({n_buy})</button>
+  <button class="fbtn" onclick="setF('d:ALERT',this)" style="border-color:#3b82f666;color:#3b82f6">&#x1F514; Set alert ({n_alert})</button>
+  <button class="fbtn" onclick="setF('d:SELL',this)" style="border-color:#ff475766;color:#ff4757">&#x26D4; Sell signal ({n_sell})</button>
   <button class="fbtn" onclick="setF('ipo',this)" title="Listed less than 200 sessions ago">&#x1F195; Recent IPOs ({len(ipos)})</button>
   <div class="tsep"></div>
   <button class="fbtn s2" id="tb-s2" onclick="setStageFilter(2,this)">S2 Advancing ({len(stage2)})</button>
@@ -688,7 +711,7 @@ function extraCards(r){
 }
 function fillGaps(panel,pool){
   if(!pool)return;
-  var cards=Array.prototype.slice.call(pool.children),cols=Array.prototype.slice.call(panel.children).filter(function(c){return c!==pool&&c.offsetParent!==null;});
+  var cards=Array.prototype.slice.call(pool.children),cols=Array.prototype.slice.call(panel.children).filter(function(c){return c!==pool&&c.offsetParent!==null&&c.style.gridColumn!=='1 / -1';});
   for(var guard=0;guard<30&&cards.length;guard++){
     var rows={};cols.forEach(function(c){var k=Math.round(c.offsetTop);(rows[k]=rows[k]||[]).push(c);});
     var placed=false;
@@ -810,6 +833,7 @@ function fullSummary(r,passed,testable){
   else if(stg!==2&&trendOK)wt+=' The price structure meets Stage 2, but the stage model is not yet convinced the advance is established - recheck after the next base.';
   else if(stg!==2)wt+=' For a SEPA entry it still needs to reach Stage 2: price above a rising 150- and 200-day with the 50-day above both, and up-day volume beating down-day volume.';
   if(r.ipo)wt+=' As a recent listing, judge it on its first orderly base rather than the 200-day rules.';
+  if(r.decision&&ACT[r.decision.action]){vd=ACT[r.decision.action][0];vc=ACT[r.decision.action][1];}
   if(L.days>=2){vd=HAS_LIMITS?'CIRCUIT-LOCKED':'NOT TRADING';vc=R;wt='Nothing is actionable while it is locked. Wait for the lock to break and normal two-way trading to resume, then let a proper base form - the indicators will only mean something once the bars have a real range again.';}
   else if(L.illiquid){vd=vd+' &middot; THIN';wt+=' Size any position to the stock&#39;s low liquidity.';}
 
@@ -901,6 +925,80 @@ function cardNote(name,e){
   if(name==='cmo')return Math.abs(e.cmo)>=99?'Every day in the last 14 closed '+(e.cmo>0?'higher':'lower')+' - extreme, usually unsustainable.':(e.cmo>50?'Up days heavily outweigh down days.':e.cmo<-50?'Down days heavily outweigh up days.':'Up and down days roughly balanced.');
   if(name==='elder')return Math.abs(e.bullPow-e.bearPow)<1e-6?'Bull and Bear Power are equal: the day had no range.':(e.bearPow>0?'Even the day&#39;s low was above the 13-day average - strong.':e.bullPow<0?'Even the day&#39;s high was below the 13-day average - weak.':'High above, low below the average - two-way trade.');
   return '';
+}
+var ACT={BUY:['BUY','#00d084','Breakout confirmed'],ALERT:['SET ALERT','#3b82f6','Ready - waiting for the trigger'],WAIT:['WAIT','#ff9f43','Extended - do not chase'],WATCH:['WATCH','#8aa4c0','Not ready yet'],AVOID:['AVOID','#ff4757','Fails the rules'],SELL:['SELL SIGNAL','#ff4757','Exit signal for holders']};
+function _px(v){return _num(v)?CUR+v.toFixed(2):'-';}
+function decisionHTML(r){
+  var d=r.decision; if(!d)return '';
+  var a=ACT[d.action]||ACT.WATCH,col=a[1],bt=(typeof BT!=='undefined'&&BT)||{},mk=(typeof MKT!=='undefined'&&MKT)||{};
+  var cell=function(lbl,val,sub,c){return '<div style="background:#0a1120;border:1px solid var(--border);border-radius:6px;padding:7px 10px;min-width:110px"><div style="font-size:8.5px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;font-weight:700">'+lbl+'</div><div style="font-family:JetBrains Mono;font-weight:800;font-size:14px;color:'+(c||'#e8f0fe')+'">'+val+'</div>'+(sub?'<div style="font-size:9px;color:var(--muted)">'+sub+'</div>':'')+'</div>';};
+  var prices='';
+  if(d.action==='SELL')prices=cell('Last price',_px(d.price))+cell('50-day avg',_px(d.ma50),'broken on volume','#ff4757');
+  else if(_num(d.entry)){
+    var rr=_num(d.t1)&&_num(d.stop)?(d.t1-d.entry)/(d.entry-d.stop):null;
+    prices=cell(d.action==='BUY'?'Entry (today&#39;s close)':'Buy only above',_px(d.entry),d.action==='BUY'?'':'pivot '+_px(d.pivot),col)+
+      cell('Stop-loss',_px(d.stop),'-'+d.riskPct+'% risk','#ff4757')+
+      cell('Target 1',_px(d.t1),'+20% - sell part','#00d084')+
+      cell('Target 2',_px(d.t2),'3x the risk','#00d084')+
+      (rr?cell('Reward : risk',rr.toFixed(1)+' : 1','to target 1'):'');
+  }
+  var checks=d.checks.map(function(x){return '<div style="font-size:10px;color:'+(x.ok?'#c9d6e8':'#7f93ab')+';white-space:nowrap"><span style="color:'+(x.ok?'#00d084':'#ff4757')+';font-weight:800;margin-right:4px">'+(x.ok?'&#10003;':'&#10007;')+'</span>'+x.text+'</div>';}).join('');
+  // supporting / conflicting evidence
+  var ev=[],pats=r.patterns||[],ich=r.ichimoku;
+  pats.slice(0,2).forEach(function(p){var bull=p.kind==='bullish',buyish=d.action==='BUY'||d.action==='ALERT';
+    ev.push('<span style="color:'+(bull?'#00d084':'#ff4757')+'">'+(bull?'&#9650;':'&#9660;')+' '+p.name+'</span> '+(p.daysAgo===0?'today':p.daysAgo+'d ago')+(p.volConfirm?' on above-average volume':'')+(buyish&&!bull?' - <b>conflicts</b> with the buy setup, be cautious':buyish&&bull?' - supports the setup':''));});
+  if(ich)ev.push('Ichimoku: <b style="color:'+(ich.score>=2?'#00d084':ich.score<=-2?'#ff4757':'#ff9f43')+'">'+ich.verdict+'</b>');
+  var evid='';
+  if(bt.n){
+    evid='<b>How this BUY rule has done:</b> over the past year it fired '+bt.n+' times across this market&#39;s list. '+bt.winRate+'% reached +'+bt.target+'% before the stop, '+bt.stopRate+'% were stopped out, and '+bt.timeoutRate+'% were still open after '+bt.horizon+' sessions. Average result <b style="color:'+(bt.avgRet>=0?'#00d084':'#ff4757')+'">'+(bt.avgRet>=0?'+':'')+bt.avgRet+'% per trade</b> ('+(bt.expR>=0?'+':'')+bt.expR+'R). '+
+      (bt.expR>0?'Most trades lose a little and a minority win big - the edge only exists if every stop is honoured.':'The rule lost money over this period - breakouts have not been working, so be selective and keep size small.');
+  }
+  var conflict='';
+  if((d.action==='BUY'||d.action==='ALERT'||d.action==='WAIT')&&r.stage&&r.stage!==2)
+    conflict='<div style="margin-top:4px;color:#ff9f43"><b>Why other panels below disagree:</b> the stage panels label it Stage '+r.stage+' because they add an extra test - up-day volume must beat down-day volume over 60 sessions (here '+(_num(r.accDistRatio)?r.accDistRatio.toFixed(2)+'x':'n/a')+'). Minervini&#39;s published trend template does not include that test, and this decision follows the published rules. Treat the weaker volume as a caution: half size, and insist on the breakout volume.</div>';
+  else if((d.action==='AVOID'||d.action==='SELL')&&r.stage===2)
+    conflict='<div style="margin-top:4px;color:#ff9f43"><b>Why the stage panel disagrees:</b> it labels this Stage 2, but the decision rules found '+(d.action==='SELL'?'a break of the 50-day on heavy volume':'failing trend rules')+' - the decision takes priority.</div>';
+  var mkTxt=mk.label?'<b>Market:</b> <span style="color:'+(mk.state==='uptrend'?'#00d084':mk.state==='pressure'?'#ff9f43':'#ff4757')+'">'+mk.label+'</span>'+(mk.state==='correction'?' - no new buys.':mk.state==='pressure'?' - buy only the best setups, smaller size.':' - new buys allowed.'):'';
+  return '<div style="grid-column:1/-1;background:linear-gradient(90deg,'+col+'14,transparent 60%);border:1px solid '+col+'55;border-left:4px solid '+col+';border-radius:8px;padding:12px 14px;margin-bottom:4px">'+
+    '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start">'+
+      '<div style="min-width:190px;max-width:330px"><div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.8px">DECISION &middot; SEPA RULES</div>'+
+      '<div style="font-size:24px;font-weight:900;color:'+col+';letter-spacing:-.5px;line-height:1.1;margin:2px 0">'+a[0]+'</div>'+
+      '<div style="font-size:10px;color:#c9d6e8;font-weight:700">'+a[2]+' &middot; '+d.passed+'/8 trend rules</div>'+
+      '<div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin-top:5px">'+d.reasons.join(' ')+'</div></div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:280px">'+prices+'</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1px 14px;min-width:330px">'+checks+'</div>'+
+    '</div>'+
+    '<div style="font-size:10px;color:var(--muted);line-height:1.55;margin-top:8px;padding-top:7px;border-top:1px solid '+col+'33">'+
+      (mkTxt?mkTxt+' &nbsp;&middot;&nbsp; ':'')+(ev.length?ev.join(' &nbsp;&middot;&nbsp; '):'No candlestick pattern in the last 3 sessions.')+
+      conflict+(evid?'<div style="margin-top:4px">'+evid+'</div>':'')+
+      '<div style="margin-top:4px;font-size:9px;color:#3d5a78">Rule-based, not a prediction: it says what Minervini&#39;s rules call for at today&#39;s close. Prices are levels to act at, not forecasts. Not financial advice.</div>'+
+    '</div></div>';
+}
+function candleHTML(r){
+  var p=r.patterns||[];
+  var o='<div class="mv"><div class="abox" style="margin-top:12px;padding:10px;line-height:1.5;font-size:10px;color:var(--muted)"><div style="font-weight:800;font-size:9.5px;color:var(--text);letter-spacing:.5px;margin-bottom:5px">CANDLESTICK PATTERNS (LAST 3 SESSIONS)</div>';
+  if(!p.length)o+='<p style="margin:0">None of the tracked patterns (hammer, shooting star, engulfing, morning/evening star, three soldiers/crows, dragonfly/gravestone doji) formed in the last 3 sessions.</p>';
+  p.forEach(function(x){var c=x.kind==='bullish'?'#00d084':'#ff4757';
+    o+='<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:'+c+';font-size:11px">'+(x.kind==='bullish'?'&#9650; ':'&#9660; ')+x.name+'</b>'+_tag((x.daysAgo===0?'TODAY':x.daysAgo+'D AGO'),c)+'</div>'+
+      '<div style="font-size:9px;color:#5a7a9a">'+x.shape+(x.volConfirm?' &middot; on above-average volume (stronger)':' &middot; on below-average volume (weaker)')+'</div>'+
+      '<div>'+x.desc+'</div></div>';});
+  o+='<p style="margin:4px 0 0;font-size:9px;color:#3d5a78">Candles are short-term signals: they matter most at a support or resistance level and need the next session to confirm.</p></div></div>';
+  return o;
+}
+function ichiHTML(r){
+  var x=r.ichimoku; if(!x)return '';
+  var G='#00d084',R='#ff4757',A='#ff9f43',vc=x.score>=2?G:x.score<=-2?R:A;
+  var row=function(l,v,ok){return _trow(l,v,ok===true?_tag('BULL',G):ok===false?_tag('BEAR',R):'');};
+  var pos=x.pos==='above'?'Above the cloud':x.pos==='below'?'Below the cloud':'Inside the cloud';
+  return '<div class="mv"><div class="abox" style="margin-top:12px;padding:10px;line-height:1.5;font-size:10px;color:var(--muted)">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:800;font-size:9.5px;color:var(--text);letter-spacing:.5px">ICHIMOKU KINKO HYO</span>'+_tag(x.verdict.toUpperCase(),vc)+'</div>'+
+    row('Price vs cloud',pos,x.pos==='above'?true:x.pos==='below'?false:null)+
+    row('Cloud (today)',_px(x.cloudBot)+' - '+_px(x.cloudTop))+
+    row('Tenkan (9) / Kijun (26)',_px(x.tenkan)+' / '+_px(x.kijun),x.tk==='bull')+
+    (x.tkCrossAge!==null&&x.tkCrossAge!==undefined?row('Last TK cross',x.tkCrossAge+' sessions ago'):'')+
+    row('Chikou vs price 26 ago',(x.chikouUp?'Above ':'Below ')+_px(x.chikouRef),x.chikouUp)+
+    row('Cloud 26 sessions ahead',x.futBull?'Green (A above B)':'Red (B above A)',x.futBull)+
+    '<p style="margin:6px 0 0">'+(x.score===4?'All four Ichimoku signals agree on an uptrend.':x.score===-4?'All four Ichimoku signals agree on a downtrend.':x.pos==='inside'?'Price is inside the cloud - a no-trend zone; wait for it to leave the cloud.':'The signals are partly mixed - '+(x.score>0?'leaning bullish.':'leaning bearish.'))+' The cloud itself acts as support or resistance; a thicker cloud ('+x.thickPct+'% of price here) is harder to break through.</p></div></div>';
 }
 function fillFund(r){
   var out='<div class="mv">';
@@ -1049,7 +1147,8 @@ function render(){
       q=document.getElementById('srch').value.toLowerCase(),
       sec=document.getElementById('sec').value;
   var d=D.filter(function(r){
-    if(filt==='ipo'){if(!r.ipo)return false;}
+    if(filt.indexOf('d:')===0){if(!r.decision||r.decision.action!==filt.slice(2))return false;}
+    else if(filt==='ipo'){if(!r.ipo)return false;}
     else if(filt!=='all'&&r.status!==filt)return false;
     if(stageFilt&&r.stage!==stageFilt)return false;
     if(sec&&r.sector!==sec)return false;
@@ -1104,7 +1203,7 @@ function row(r,i){
   }
   return '<tr class="main-row" onclick="tog('+i+')" id="mr'+i+'">'+
     '<td style="color:#253550;font-size:10px">'+(i+1)+'</td>'+
-    '<td><div class="tkr">'+r.ticker+(function(){var L=lockInfo(r);return L.days>=2?'<span style="font-size:8px;font-weight:800;color:#ff4757;border:1px solid #ff475766;background:#ff475714;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Traded at one price for '+L.days+' sessions'+(HAS_LIMITS?' (circuit limit)':' (almost no trades)')+'">'+(HAS_LIMITS?'LOCKED':'NO TRADES')+'</span>':L.illiquid?'<span style="font-size:8px;font-weight:800;color:#ff9f43;border:1px solid #ff9f4366;background:#ff9f4314;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Average traded value under '+LIQ_FMT(LIQ_MIN)+' a day">THIN</span>':'';})()+(r.ipo?'<span style="font-size:8px;font-weight:800;color:#a78bfa;border:1px solid #a78bfa66;background:#a78bfa14;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Listed '+r.listDate+' - '+r.sessions+' sessions">IPO</span>':'')+'</div><div class="co" title="'+r.name+'">'+r.name+'</div></td>'+
+    '<td><div class="tkr">'+r.ticker+(r.decision&&ACT[r.decision.action]&&r.decision.action!=='WATCH'?'<span style="font-size:8px;font-weight:800;color:'+ACT[r.decision.action][1]+';border:1px solid '+ACT[r.decision.action][1]+'66;background:'+ACT[r.decision.action][1]+'14;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle">'+ACT[r.decision.action][0]+'</span>':'')+(function(){var L=lockInfo(r);return L.days>=2?'<span style="font-size:8px;font-weight:800;color:#ff4757;border:1px solid #ff475766;background:#ff475714;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Traded at one price for '+L.days+' sessions'+(HAS_LIMITS?' (circuit limit)':' (almost no trades)')+'">'+(HAS_LIMITS?'LOCKED':'NO TRADES')+'</span>':L.illiquid?'<span style="font-size:8px;font-weight:800;color:#ff9f43;border:1px solid #ff9f4366;background:#ff9f4314;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Average traded value under '+LIQ_FMT(LIQ_MIN)+' a day">THIN</span>':'';})()+(r.ipo?'<span style="font-size:8px;font-weight:800;color:#a78bfa;border:1px solid #a78bfa66;background:#a78bfa14;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Listed '+r.listDate+' - '+r.sessions+' sessions">IPO</span>':'')+'</div><div class="co" title="'+r.name+'">'+r.name+'</div></td>'+
     '<td>'+stageBdg+'</td>'+
     '<td>'+bdg+'</td>'+
     '<td><div style="display:flex;align-items:center;gap:3px"><div class="pips">'+ps+'</div><span style="font-size:10px;color:var(--muted)">'+sc+'</span></div></td>'+
@@ -1159,7 +1258,7 @@ function det(r){
   if(r.nextExDiv)evLines.push('<div class="ev-div">\\u1F4B0 Ex-Div: '+r.nextExDiv+'</div>');
   if(evLines.length)evHtml=evLines.join('');
   
-  var entry=r.price,stop=r.ma50||(r.price*0.93),risk=entry-stop;
+  var _d=r.decision||{};var entry=_d.entry||r.price,stop=_d.stop||r.ma50||(r.price*0.93),risk=entry-stop;   // same levels as the decision box
   var target=risk>0?(entry+2*risk).toFixed(2):null;
   var tlBox='<div class="tl-box" style="padding:10px 8px;margin-bottom:8px">'+
     '<div class="tl-title" style="font-size:9px;margin-bottom:6px">\\u26A1 TRADE LEVELS</div>'+
@@ -1626,7 +1725,8 @@ function det(r){
   if(r.ipo)sepaCol=sepaCol.slice(0,5)+ipoNote(r)+sepaCol.slice(5);
   sepaCol=sepaCol.slice(0,-6)+srHTML(r)+\'</div>\';
   nuanceHTML=nuanceHTML.slice(0,-6)+volStatsHTML(r)+\'</div>\';
-  return \'<div class=\"dpanel\">\'+chartCol+sepaCol+fundCol+vcpCol+tradeCol+nuanceHTML+\'<div class=\"xpool\" style=\"display:none\">\'+extraCards(r).join(\'\')+\'</div></div>\';
+  nuanceHTML=nuanceHTML.slice(0,-6)+candleHTML(r)+ichiHTML(r)+\'</div>\';
+  return \'<div class=\"dpanel\">\'+decisionHTML(r)+chartCol+sepaCol+fundCol+vcpCol+tradeCol+nuanceHTML+\'<div class=\"xpool\" style=\"display:none\">\'+extraCards(r).join(\'\')+\'</div></div>\';
 }
 
 
@@ -1634,7 +1734,7 @@ function _topMv(col){return Array.prototype.filter.call(col.querySelectorAll('.m
 function balancePanel(panel){
   if(!panel)return;
   panel.style.alignItems='start';
-  var cols=Array.prototype.slice.call(panel.children).filter(function(c){return !c.classList.contains('xpool');});
+  var cols=Array.prototype.slice.call(panel.children).filter(function(c){return !c.classList.contains('xpool')&&c.style.gridColumn!=='1 / -1';});
   for(var it=0;it<40;it++){
     var rows={};cols.forEach(function(c){var k=Math.round(c.offsetTop);(rows[k]=rows[k]||[]).push(c);});
     var moved=false;
@@ -1671,7 +1771,8 @@ render();
     html = html.replace("{len(breakouts)}", str(len(breakouts)))
     html = html.replace("{len(pivots)}", str(len(pivots)))
     html = html.replace("{len(watching)}", str(len(watching)))
-    html = html.replace("{len(ipos)}", str(len(ipos)))
+    html = html.replace("{len(ipos)}", str(len(ipos))).replace("{n_buy}", str(n_buy)).replace("{n_alert}", str(n_alert)).replace("{n_sell}", str(n_sell)).replace("{market_html}", market_html)
+    html = html.replace("var BENCH=", "var BT=" + json.dumps(bt) + ";var MKT=" + json.dumps(mk) + ";\nvar BENCH=", 1)
     html = html.replace("{len(stage1)}", str(len(stage1)))
     html = html.replace("{len(stage2)}", str(len(stage2)))
     html = html.replace("{len(stage3)}", str(len(stage3)))

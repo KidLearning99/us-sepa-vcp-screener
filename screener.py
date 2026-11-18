@@ -1,4 +1,5 @@
 import yfinance as yf
+import decision
 import json, os, time, requests, random
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
@@ -17,6 +18,7 @@ from requests.adapters import HTTPAdapter
 
 MIN_MARKET_CAP  = int(os.environ.get("MIN_MARKET_CAP", 5_000_000_000))  # US$5B+
 SEPA_MIN        = 3
+MIN_ADV         = 1_000_000   # thin-trading threshold (avg daily traded value)
 VOL_BREAKOUT    = 1.5
 VCP_MIN         = 2
 FALLBACK_FILE   = "data/us_universe.txt"
@@ -123,7 +125,7 @@ def _parse_date(raw):
     return None
 
 # ── Batch download price history for a chunk of tickers ──────────────────────
-def download_chunk(tickers, period="1y"):
+def download_chunk(tickers, period="2y"):   # 2y: 1y for scoring + 1y for the backtest
     """Download OHLCV for a batch of tickers in one request. Returns dict ticker->df."""
     try:
         raw = yf.download(
@@ -432,7 +434,8 @@ def technicals(hist):
                 if len(j) > 60 and j.iloc[:, 1].var() > 0:
                     out["beta"] = _r(j.iloc[:, 0].cov(j.iloc[:, 1]) / j.iloc[:, 1].var(), 2)
                     out["corr"] = _r(j.iloc[:, 0].corr(j.iloc[:, 1]), 2)
-                    spy_dd = (SPY_CLOSE / SPY_CLOSE.cummax() - 1).min()
+                    _b1 = SPY_CLOSE.tail(252)
+                    spy_dd = (_b1 / _b1.cummax() - 1).min()
                     out["spyMaxDD"] = _r(spy_dd * 100, 1)
 
         if len(c) > 21:   # Keltner(20, 2xATR10) and Donchian(20)
@@ -869,7 +872,7 @@ def fetch_all():
     # Step 2: score all stocks from price data (CPU only, no network)
     candidates = []
     for ticker, hist in hist_map.items():
-        r = score_stock(ticker, hist)
+        r = score_stock(ticker, hist.tail(252))   # scoring uses the last year, as before
         if r:
             candidates.append(r)
     print(f"Passed SEPA filters: {len(candidates)} stocks — now enriching with metadata...")
@@ -885,8 +888,33 @@ def fetch_all():
             if r:
                 results.append(r)
 
+    # Step 4: decision engine, candlestick patterns, Ichimoku, market filter, backtest
+    global META
+    market = decision.market_state(SPY_CLOSE)
+    print(f"Market filter: {market['label']}")
+    for r in results:
+        try:
+            hist = hist_map.get(r["ticker"])
+            tail = hist.tail(20)
+            adv = float((tail["Close"] * tail["Volume"]).mean()) if len(tail) else 0
+            last2 = hist.tail(2)
+            locked = bool(len(last2) == 2 and ((last2["High"] == last2["Low"]) & (last2["Low"] == last2["Close"])).all())
+            r["decision"] = decision.decide(hist, SPY_CLOSE, market, liquid=adv >= MIN_ADV, locked=locked)
+            r["patterns"] = decision.candle_patterns(hist)
+            r["ichimoku"] = decision.ichimoku(hist)
+        except Exception as e:
+            print(f"Decision failed for {r.get('ticker')}: {type(e).__name__}: {e}")
+            r["decision"] = None
+    bt = decision.backtest(hist_map, SPY_CLOSE, min_adv=MIN_ADV)
+    print(f"Backtest of the BUY rule: {bt}")
+    META = {"market": market, "backtest": bt}
+    from collections import Counter
+    print("Decisions:", dict(Counter((r.get("decision") or {}).get("action") for r in results)))
+
     results.sort(key=lambda x: (x['sepaScore'], x['vcpScore']), reverse=True)
     return results
+
+META = {}
 
 # Deployment is handled by GitHub Pages via the workflow — no publish function needed.
 
@@ -912,7 +940,7 @@ if __name__ == "__main__":
         sys.exit(1)
     try:
         import build_dashboard
-        html = build_dashboard.build(data, min_cap=MIN_MARKET_CAP)
+        html = build_dashboard.build(data, min_cap=MIN_MARKET_CAP, meta=META)
         with open('index.html', 'w', encoding='utf-8') as f: f.write(html)
         print(f"Dashboard built: {len(html):,} chars")
         print("index.html ready — GitHub Pages deployment handled by workflow.")
