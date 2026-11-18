@@ -56,8 +56,20 @@ def build(data, source="Yahoo Finance (live)", min_cap=5_000_000_000):
     sectors   = sorted(set(r["sector"] for r in data if r["sector"]))
     sector_opts = "".join(f'<option value="{s}">{s}</option>' for s in sectors)
 
+    def _tradeable(r):
+        # Exclude circuit-locked runs (high = low = close for 2+ sessions) and
+        # thinly traded names from the Top 10 - their indicators overstate strength.
+        o = r.get("ohlcv") or []
+        lock = 0
+        for c in reversed(o):
+            if c and c[1] == c[2] == c[3]: lock += 1
+            else: break
+        tail = [c for c in o[-20:] if c and c[3] and c[4] is not None]
+        adv = sum(c[3] * c[4] for c in tail) / len(tail) if tail else 0
+        return lock < 2 and adv >= 1e6
+
     top = sorted(
-        breakouts + [r for r in pivots if r["sepaScore"] >= 5],
+        [r for r in breakouts + [r for r in pivots if r["sepaScore"] >= 5] if _tradeable(r)],
         key=lambda x: (x["sepaScore"], x["vcpScore"], x["volRatio"]),
         reverse=True
     )[:10]
@@ -631,7 +643,7 @@ function srHTML(r){
       ['R3','R2','R1','S1','S2','S3'].map(function(k){return '<div style="background:#0a1120;border-radius:3px;padding:2px"><div style="color:'+M+';font-size:8px">'+k+'</div><div style="color:'+(k[0]==='R'?R:G)+'">'+(_num(p[k])?p[k].toFixed(2):'-')+'</div></div>';}).join('')+
       '</div>'+_trow('Pivot (P)',CUR+(_num(p.P)?p.P.toFixed(2):'-'),px>=p.P?_tag('ABOVE',G):_tag('BELOW',R));
   }
-  return o+'</div></div>';
+  return o+'</div></div>'+levelNotes(r);
 }
 function volStatsHTML(r){
   var t=r.tech||{},G='#00d084',R='#ff4757',A='#ff9f43',M='#5a7a9a';
@@ -662,12 +674,12 @@ function extraCards(r){
   var sp=function(v,col){return '<span style="color:'+col+'">'+v+'</span>';};
   if(_num(e.lrSlope))c.push(_card('Trend quality (50D)',(e.lrSlope>=0?'+':'')+e.lrSlope.toFixed(0)+'%/yr &middot; R&sup2; '+(_num(e.lrR2)?e.lrR2.toFixed(2):'-'),e.lrR2>=0.8?_tag(e.lrSlope>0?'SMOOTH UP':'SMOOTH DOWN',e.lrSlope>0?G:R):e.lrR2<0.4?_tag('CHOPPY',A):'','Log-price regression; R&sup2; near 1 = steady trend'));
   if(_num(e.aroonUp))c.push(_card('Aroon (25)',sp('Up '+e.aroonUp.toFixed(0),G)+' / '+sp('Down '+e.aroonDn.toFixed(0),R),e.aroonUp>=70&&e.aroonDn<=30?_tag('UPTREND',G):e.aroonDn>=70&&e.aroonUp<=30?_tag('DOWNTREND',R):_tag('RANGE',M),'Days since 25-day high / low, as %'));
-  if(_num(e.viPlus))c.push(_card('Vortex (14)',sp('VI+ '+e.viPlus.toFixed(2),G)+' / '+sp('VI- '+e.viMinus.toFixed(2),R),e.viPlus>e.viMinus?_tag('BULL',G):_tag('BEAR',R),''));
+  if(_num(e.viPlus))c.push(_card('Vortex (14)',sp('VI+ '+e.viPlus.toFixed(2),G)+' / '+sp('VI- '+e.viMinus.toFixed(2),R),e.viPlus>e.viMinus?_tag('BULL',G):_tag('BEAR',R),cardNote('vortex',e)));
   if(_num(e.uo))c.push(_card('Ultimate Oscillator',e.uo.toFixed(0),e.uo>70?_tag('OVERBOUGHT',R):e.uo<30?_tag('OVERSOLD',G):e.uo>=50?_tag('BULLISH',G):_tag('WEAK',A),'7 / 14 / 28-day buying pressure'));
-  if(_num(e.cmo))c.push(_card('Chande Momentum (14)',(e.cmo>=0?'+':'')+e.cmo.toFixed(0),e.cmo>50?_tag('OVERBOUGHT',R):e.cmo<-50?_tag('OVERSOLD',G):'',''));
+  if(_num(e.cmo))c.push(_card('Chande Momentum (14)',(e.cmo>=0?'+':'')+e.cmo.toFixed(0),e.cmo>50?_tag('OVERBOUGHT',R):e.cmo<-50?_tag('OVERSOLD',G):'',cardNote('cmo',e)));
   if(_num(e.trix))c.push(_card('TRIX (15)',(e.trix>=0?'+':'')+e.trix.toFixed(3)+'% <span style="color:'+M+';font-weight:400;font-size:10px">sig '+e.trixSig.toFixed(3)+'</span>',e.trix>e.trixSig?_tag('RISING',G):_tag('FALLING',R),'Triple-smoothed momentum'));
   if(_num(e.ao))c.push(_card('Awesome Oscillator',(e.ao>=0?'+':'')+e.ao.toFixed(2)+'% of price',e.ao>=0?(e.aoUp?_tag('BULL RISING',G):_tag('BULL FADING',A)):(e.aoUp?_tag('BEAR EASING',A):_tag('BEAR FALLING',R)),'5 vs 34-day midpoint average'));
-  if(_num(e.bullPow))c.push(_card('Elder Ray (13)',sp('Bull '+(e.bullPow>=0?'+':'')+e.bullPow.toFixed(2),e.bullPow>=0?G:R)+' / '+sp('Bear '+(e.bearPow>=0?'+':'')+e.bearPow.toFixed(2),e.bearPow>=0?G:R),e.bullPow>0&&e.bearPow<0?_tag('BALANCED',M):e.bearPow>=0?_tag('STRONG',G):e.bullPow<=0?_tag('WEAK',R):'','High and low vs 13-day EMA'));
+  if(_num(e.bullPow))c.push(_card('Elder Ray (13)',sp('Bull '+(e.bullPow>=0?'+':'')+e.bullPow.toFixed(2),e.bullPow>=0?G:R)+' / '+sp('Bear '+(e.bearPow>=0?'+':'')+e.bearPow.toFixed(2),e.bearPow>=0?G:R),e.bullPow>0&&e.bearPow<0?_tag('BALANCED',M):e.bearPow>=0?_tag('STRONG',G):e.bullPow<=0?_tag('WEAK',R):'','High and low vs 13-day EMA. '+cardNote('elder',e)));
   if(_num(e.cmf))c.push(_card('Chaikin Money Flow (20)',(e.cmf>=0?'+':'')+e.cmf.toFixed(3),e.cmf>0.1?_tag('ACCUMULATION',G):e.cmf<-0.1?_tag('DISTRIBUTION',R):_tag('NEUTRAL',M),''));
   if(_num(e.chaikinOsc))c.push(_card('Chaikin Oscillator',(e.chaikinOsc>=0?'+':'')+e.chaikinOsc.toFixed(2)+'x avg vol',e.chaikinOsc>0?_tag('INFLOW',G):_tag('OUTFLOW',R),'3 vs 10-day A/D line'));
   if(_num(e.force))c.push(_card('Force Index (13)',(e.force>=0?'+':'')+e.force.toFixed(2)+'%',e.force>0?_tag('BUYERS',G):_tag('SELLERS',R),'Price change x volume, vs avg $ volume'));
@@ -771,6 +783,7 @@ function fullSummary(r,passed,testable){
   if(_num(r.ma50)&&r.ma50<px)rk+='A stop under the 50-day ('+f2(r.ma50)+') risks '+((px-r.ma50)/px*100).toFixed(1)+'%'+((px-r.ma50)/px*100>8?', wider than the 7-8% rule allows':'')+'. ';
   else if(_num(r.ma50))rk+='Price is below the 50-day, so there is no natural stop under it. ';
   if(_num(t.maxDD))rk+='Its worst fall in the past year was '+t.maxDD.toFixed(1)+'%.';
+  if(liqTxt)rk+=' '+liqTxt;
   if(rk)sec.push(['Risk',rk]);
 
   // ── Verdict
@@ -782,6 +795,11 @@ function fullSummary(r,passed,testable){
   else if(ma50dn&&_num(t.macdHist)&&t.macdHist>0){vd='BOUNCE, NOT YET A TREND';vc=A;}
   else {vd='MIXED - NO EDGE';vc=A;}
 
+  var L=lockInfo(r),liqTxt='';
+  if(L.days>=2){
+    sec.unshift(['Circuit lock','<b style=\"color:'+R+'\">For the last '+L.days+' sessions the stock has traded at a single price all day</b> (high = low = close), moving about '+(L.step||0).toFixed(1)+'% '+(L.up?'up':'down')+' each day - the exchange&#39;s daily price limit. '+(L.up?'Buyers are queued at the limit with almost no sellers, so you generally cannot buy at the shown price.':'Sellers are queued at the limit with almost no buyers, so you generally cannot sell.')+' Every indicator here is computed from those one-price bars and overstates the trend. Locked runs like this are typical of thinly traded or speculative stocks and can reverse just as abruptly.']);
+  }
+  if(_num(L.adv))liqTxt='Average traded value over 20 sessions is about '+LIQ_FMT(L.adv)+' a day'+(L.illiquid?' - <b>very thin</b>: a modest order can move the price, and exiting may be hard.':'.');
   // ── What to watch
   var wt='';
   if(vd==='ACTIONABLE BREAKOUT')wt='Follow-through above '+(trigger?f2(trigger):'the pivot')+' on above-average volume keeps it valid. A close back inside the base, or below the 50-day, says the breakout failed.';
@@ -792,6 +810,8 @@ function fullSummary(r,passed,testable){
   else if(stg!==2&&trendOK)wt+=' The price structure meets Stage 2, but the stage model is not yet convinced the advance is established - recheck after the next base.';
   else if(stg!==2)wt+=' For a SEPA entry it still needs to reach Stage 2: price above a rising 150- and 200-day with the 50-day above both, and up-day volume beating down-day volume.';
   if(r.ipo)wt+=' As a recent listing, judge it on its first orderly base rather than the 200-day rules.';
+  if(L.days>=2){vd='CIRCUIT-LOCKED';vc=R;wt='Nothing is actionable while it is locked. Wait for the lock to break and normal two-way trading to resume, then let a proper base form - the indicators will only mean something once the bars have a real range again.';}
+  else if(L.illiquid){vd=vd+' &middot; THIN';wt+=' Size any position to the stock&#39;s low liquidity.';}
 
   var h='<div style=\"font-size:10px;color:var(--muted);line-height:1.55;padding:10px 12px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);border-left:3px solid '+vc+'\">'+
     '<div style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:6px\"><strong style=\"color:#fff;font-size:10.5px;letter-spacing:.5px\">FULL READ</strong>'+
@@ -802,6 +822,56 @@ function fullSummary(r,passed,testable){
   h+='<p style=\"margin:0 0 7px;padding-top:6px;border-top:1px solid var(--border)\"><strong style=\"color:'+vc+'\">What to watch. </strong>'+wt+'</p>';
   h+='<p style=\"margin:0;font-size:9px;color:#3d5a78\">The SEPA method buys strength already in motion and depends on cutting failures quickly; it assumes a trending broad market. Catalysts and the market backdrop are yours to judge. Not financial advice.</p></div>';
   return h;
+}
+var LIQ_MIN=1e6;
+function LIQ_FMT(v){return v>=1e9?CUR+(v/1e9).toFixed(1)+'B':CUR+(v/1e6).toFixed(1)+'M';}
+function lockInfo(r){
+  var o=r.ohlcv||[],n=o.length,days=0,dir=0,steps=[];
+  for(var i=n-1;i>=1;i--){var x=o[i];if(!(x&&x[1]===x[2]&&x[2]===x[3]))break;days++;var p=o[i-1][3];if(p){var c=(x[3]-p)/p*100;steps.push(c);dir+=c>0?1:c<0?-1:0;}}
+  var tv=0,k=0;for(var j=Math.max(0,n-20);j<n;j++){if(o[j]&&_num(o[j][3])&&_num(o[j][4])){tv+=o[j][3]*o[j][4];k++;}}
+  var avgStep=steps.length?steps.reduce(function(a,b){return a+Math.abs(b);},0)/steps.length:null;
+  return {days:days,up:dir>0,step:avgStep,adv:k?tv/k:null,illiquid:k?tv/k<LIQ_MIN:false};
+}
+function _fmtVal(v){return LIQ_FMT(v);}
+function levelNotes(r){
+  var t=r.tech||{},px=r.price,f2=function(v){return CUR+v.toFixed(2);},o=[];
+  if(!_num(px))return '';
+  var res=(t.res||[])[0],sup=(t.sup||[])[0];
+  o.push('<b style=\"color:var(--text)\">What support and resistance are.</b> Prices where the stock has repeatedly turned. <b>Resistance</b> is a ceiling: earlier buyers who are sitting on losses sell to get out at break-even, and sellers have outnumbered buyers there before. <b>Support</b> is a floor where buyers stepped in before. The more times a level was tested (the &times; count), the more it matters. Once a level breaks, the roles flip - broken resistance often becomes support. This screen finds them from swing highs and lows over the last 6 months, grouping turns within about 1.5% of each other.');
+  // Support / resistance
+  if(!res)o.push('<b>For this stock - resistance:</b> there are no swing highs above the price in the last 6 months, so no one is sitting on old losses waiting to sell - but there is also no level to aim for. In this situation traders trail a stop rather than set a target.');
+  else o.push('<b>For this stock - resistance:</b> '+f2(res.v)+' is the first ceiling'+(res.n>1?', where the stock turned down '+res.n+' times':'')+'. Sellers who bought there often exit when price returns, so expect hesitation; a close through it on strong volume turns it into support.');
+  if(sup){var dd=(px-sup.v)/px*100;
+    o.push('<b>Support:</b> '+f2(sup.v)+' is the nearest floor, '+dd.toFixed(1)+'% below'+(sup.n>1?' (held '+sup.n+' times)':'')+'. '+(dd>25?'That is a long way down: after a near-vertical run the chart has no nearby floor, so a reversal could fall far before buyers step in.':dd<4?'It is close, which keeps the downside to a natural stop small.':'A break below it would undo the structure of the last few months.'));}
+  // Fibonacci
+  o.push('<b style=\"color:var(--text)\">What Fibonacci levels are.</b> After a big move, prices tend to retrace part of it before continuing. Traders mark 23.6%, 38.2%, 50%, 61.8% and 78.6% of the move (ratios from the Fibonacci sequence; 50% is just the halfway point) and watch for pullbacks or bounces to pause there. They are not magic - they work partly because so many traders watch the same levels - so they are most useful where they line up with support, resistance or a moving average. This screen measures the biggest move in the last 60 sessions.');
+  if(t.fib){var f=t.fib,lv=f.lv,keys=['0.236','0.382','0.5','0.618','0.786'];
+    var below=keys.filter(function(k){return _num(lv[k])&&lv[k]<px;}).length;
+    if(f.up){
+      if(below===keys.length)o.push('<b>For this stock:</b> the stock has not pulled back at all from its 60-day rise - every retracement level is below the price. A healthy pullback in a strong trend usually holds the 38.2-50% zone ('+f2(lv['0.5'])+' - '+f2(lv['0.382'])+'); falling through 61.8% ('+f2(lv['0.618'])+') would mean the rise has largely failed.');
+      else o.push('<b>For this stock:</b> the stock is retracing its 60-day rise ('+f2(f.lo)+' to '+f2(f.hi)+'). Shallow pullbacks (23.6-38.2%) are typical of strong trends; holding 50% ('+f2(lv['0.5'])+') keeps the uptrend intact, while losing 61.8% ('+f2(lv['0.618'])+') usually means it is over.');
+    } else {
+      o.push('<b>For this stock:</b> these levels measure the bounce after the 60-day fall from '+f2(f.hi)+' to '+f2(f.lo)+'. Rebounds in a downtrend often stall at 38.2-61.8% ('+f2(lv['0.382'])+' - '+f2(lv['0.618'])+'); getting back above 61.8% suggests the fall is being reversed rather than just bounced.');
+    }
+  }
+  // Pivots
+  if(t.pivots){var p=t.pivots;
+    o.push('<b style=\"color:var(--text)\">What pivot points are.</b> A day-trading formula: the pivot is the average of the last session&#39;s high, low and close; R1-R3 are projected ceilings and S1-S3 projected floors for the next session. They describe the next day only, not the trend.');
+    if(_num(p.R1)&&_num(p.S1)&&Math.abs(p.R1-p.S1)<1e-6)o.push('<b>For this stock:</b> every level equals '+f2(p.P)+' because the last session&#39;s high, low and close were identical - the stock traded at a single price all day. Pivots carry no information until it trades in a normal range again.');
+    else o.push('<b>For this stock:</b> short-term levels for the next session, from the last day&#39;s high, low and close. Price is '+(px>=p.P?'above':'below')+' the pivot ('+f2(p.P)+'), a mild '+(px>=p.P?'positive':'negative')+'. R1 '+f2(p.R1)+' is the first intraday ceiling and S1 '+f2(p.S1)+' the first floor; they matter mostly to day traders.');
+  }
+  // RS line
+  if(t.rsS&&t.rsS.length){var last=t.rsS[t.rsS.length-1];
+    o.push('<b>RS line:</b> the stock divided by '+BENCH+', set to 100 sixty sessions ago. It reads '+last.toFixed(1)+', so the stock has '+(last>=100?'outperformed by '+(last-100).toFixed(0)+'%':'lagged by '+(100-last).toFixed(0)+'%')+' since then. A rising line means it is leading the market; Minervini wants it rising, ideally at new highs before price is.');}
+  return '<div class="mv"><div class="abox" style="margin-top:12px;padding:10px;line-height:1.5;font-size:10px;color:var(--muted)"><div style="font-weight:800;font-size:9px;color:var(--text);margin-bottom:5px;letter-spacing:.5px">READING THESE LEVELS</div>'+
+    o.map(function(x){return '<p style="margin:0 0 6px">'+x+'</p>';}).join('')+'</div></div>';
+}
+function cardNote(name,e){
+  // stock-specific one-liners for the filler cards
+  if(name==='vortex')return Math.abs(e.viPlus-e.viMinus)<0.02?'VI+ equals VI-: no directional edge.':(e.viPlus>e.viMinus?'Upward movement outweighs downward over 14 days.':'Downward movement outweighs upward over 14 days.');
+  if(name==='cmo')return Math.abs(e.cmo)>=99?'Every day in the last 14 closed '+(e.cmo>0?'higher':'lower')+' - extreme, usually unsustainable.':(e.cmo>50?'Up days heavily outweigh down days.':e.cmo<-50?'Down days heavily outweigh up days.':'Up and down days roughly balanced.');
+  if(name==='elder')return Math.abs(e.bullPow-e.bearPow)<1e-6?'Bull and Bear Power are equal: the day had no range.':(e.bearPow>0?'Even the day&#39;s low was above the 13-day average - strong.':e.bullPow<0?'Even the day&#39;s high was below the 13-day average - weak.':'High above, low below the average - two-way trade.');
+  return '';
 }
 function fillFund(r){
   var out='<div class="mv">';
@@ -1005,7 +1075,7 @@ function row(r,i){
   }
   return '<tr class="main-row" onclick="tog('+i+')" id="mr'+i+'">'+
     '<td style="color:#253550;font-size:10px">'+(i+1)+'</td>'+
-    '<td><div class="tkr">'+r.ticker+(r.ipo?'<span style="font-size:8px;font-weight:800;color:#a78bfa;border:1px solid #a78bfa66;background:#a78bfa14;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Listed '+r.listDate+' - '+r.sessions+' sessions">IPO</span>':'')+'</div><div class="co" title="'+r.name+'">'+r.name+'</div></td>'+
+    '<td><div class="tkr">'+r.ticker+(function(){var L=lockInfo(r);return L.days>=2?'<span style="font-size:8px;font-weight:800;color:#ff4757;border:1px solid #ff475766;background:#ff475714;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Traded at one price for '+L.days+' sessions (circuit limit)">LOCKED</span>':L.illiquid?'<span style="font-size:8px;font-weight:800;color:#ff9f43;border:1px solid #ff9f4366;background:#ff9f4314;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Average traded value under '+LIQ_FMT(LIQ_MIN)+' a day">THIN</span>':'';})()+(r.ipo?'<span style="font-size:8px;font-weight:800;color:#a78bfa;border:1px solid #a78bfa66;background:#a78bfa14;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Listed '+r.listDate+' - '+r.sessions+' sessions">IPO</span>':'')+'</div><div class="co" title="'+r.name+'">'+r.name+'</div></td>'+
     '<td>'+stageBdg+'</td>'+
     '<td>'+bdg+'</td>'+
     '<td><div style="display:flex;align-items:center;gap:3px"><div class="pips">'+ps+'</div><span style="font-size:10px;color:var(--muted)">'+sc+'</span></div></td>'+
