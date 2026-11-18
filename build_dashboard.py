@@ -928,51 +928,104 @@ function cardNote(name,e){
 }
 var ACT={BUY:['BUY','#00d084','Breakout confirmed'],ALERT:['SET ALERT','#3b82f6','Ready - waiting for the trigger'],WAIT:['WAIT','#ff9f43','Extended - do not chase'],WATCH:['WATCH','#8aa4c0','Not ready yet'],AVOID:['AVOID','#ff4757','Fails the rules'],SELL:['SELL SIGNAL','#ff4757','Exit signal for holders']};
 function _px(v){return _num(v)?CUR+v.toFixed(2):'-';}
+var MKT_NAME='all US stocks';
 function decisionHTML(r){
   var d=r.decision; if(!d)return '';
   var a=ACT[d.action]||ACT.WATCH,col=a[1],bt=(typeof BT!=='undefined'&&BT)||{},mk=(typeof MKT!=='undefined'&&MKT)||{};
+  var G='#00d084',RD='#ff4757',AM='#ff9f43';
   var cell=function(lbl,val,sub,c){return '<div style="background:#0a1120;border:1px solid var(--border);border-radius:6px;padding:7px 10px;min-width:110px"><div style="font-size:8.5px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;font-weight:700">'+lbl+'</div><div style="font-family:JetBrains Mono;font-weight:800;font-size:14px;color:'+(c||'#e8f0fe')+'">'+val+'</div>'+(sub?'<div style="font-size:9px;color:var(--muted)">'+sub+'</div>':'')+'</div>';};
+  var head=function(t,c){return '<div style="font-size:9px;font-weight:800;letter-spacing:.8px;color:'+(c||'var(--text)')+';margin-bottom:4px">'+t+'</div>';};
   var prices='';
-  if(d.action==='SELL')prices=cell('Last price',_px(d.price))+cell('50-day avg',_px(d.ma50),'broken on volume','#ff4757');
+  if(d.action==='SELL')prices=cell('Last price',_px(d.price))+cell('50-day avg',_px(d.ma50),'broken on volume',RD);
   else if(_num(d.entry)){
     var rr=_num(d.t1)&&_num(d.stop)?(d.t1-d.entry)/(d.entry-d.stop):null;
     prices=cell(d.action==='BUY'?'Entry (today&#39;s close)':'Buy only above',_px(d.entry),d.action==='BUY'?'':'pivot '+_px(d.pivot),col)+
-      cell('Stop-loss',_px(d.stop),'-'+d.riskPct+'% risk','#ff4757')+
-      cell('Target 1',_px(d.t1),'+20% - sell part','#00d084')+
-      cell('Target 2',_px(d.t2),'3x the risk','#00d084')+
+      cell('Stop-loss',_px(d.stop),'-'+d.riskPct+'% risk',RD)+
+      cell('Target 1',_px(d.t1),'+20% - sell part',G)+
+      cell('Target 2',_px(d.t2),'3x the risk',G)+
       (rr?cell('Reward : risk',rr.toFixed(1)+' : 1','to target 1'):'');
   }
-  var checks=d.checks.map(function(x){return '<div style="font-size:10px;color:'+(x.ok?'#c9d6e8':'#7f93ab')+';white-space:nowrap"><span style="color:'+(x.ok?'#00d084':'#ff4757')+';font-weight:800;margin-right:4px">'+(x.ok?'&#10003;':'&#10007;')+'</span>'+x.text+'</div>';}).join('');
-  // supporting / conflicting evidence
+
+  // ── 1. WHY THIS RATING: this stock's own numbers, test by test ──
+  var item=function(x){return '<div style="font-size:10px;line-height:1.35;margin-bottom:3px"><span style="color:'+(x.ok?G:RD)+';font-weight:800;margin-right:4px">'+(x.ok?'&#10003;':'&#10007;')+'</span><span style="color:'+(x.ok?'#c9d6e8':'#9fb2c8')+'">'+x.text+'</span>'+(x.val?'<div style="font-size:9px;color:#6f88a5;margin-left:13px;font-family:JetBrains Mono">'+x.val+'</div>':'')+'</div>';};
+  var groups=[{t:'1 &middot; Uptrend rules',need:'all 8 must pass',xs:d.checks.slice(0,8)}];
+  if(d.trigger&&d.trigger.length)groups.push({t:'2 &middot; Breakout today',need:'all 3 must pass',xs:d.trigger});
+  groups.push({t:(d.trigger&&d.trigger.length?'3':'2')+' &middot; Safety checks',need:'both must pass',xs:d.checks.slice(8)});
+  var failed=[];
+  var gHTML=groups.map(function(g){var ok=g.xs.filter(function(x){return x.ok;}).length,all=ok===g.xs.length;
+    if(!all)failed.push(g.t.replace(/^[0-9] &middot; /,''));
+    return '<div style="flex:1;min-width:220px;background:#0a1120;border:1px solid '+(all?G+'44':RD+'44')+';border-radius:6px;padding:7px 9px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px"><span style="font-size:10px;font-weight:800;color:var(--text)">'+g.t+'</span>'+
+      '<span style="font-size:9px;font-weight:800;color:'+(all?G:RD)+'">'+ok+'/'+g.xs.length+(all?' PASS':' FAIL')+'</span></div>'+
+      '<div style="font-size:8.5px;color:var(--muted);margin:-3px 0 5px">'+g.need+'</div>'+g.xs.map(item).join('')+'</div>';}).join('');
+  var verdict=!failed.length?'Every test passes at today&#39;s close, so the rules call it a <b style="color:'+G+'">BUY</b>.':
+    'A BUY needs every group to pass. Not passing: <b style="color:'+col+'">'+failed.join(', ')+'</b>, so it is rated <b style="color:'+col+'">'+a[0]+'</b>.';
+  var why='<div style="margin-top:10px;padding-top:8px;border-top:1px solid '+col+'33">'+
+    head('WHY IT IS RATED '+a[0]+' &middot; THIS STOCK&#39;S OWN NUMBERS')+
+    '<div style="font-size:10px;color:#c9d6e8;margin-bottom:6px">'+verdict+'</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px">'+gHTML+'</div></div>';
+
+  // ── 2. WHAT ANALYSTS SAY about this stock ──
+  var an=r.analyst,anHTML;
+  if(an&&an.n){
+    var KEY={strong_buy:['Strong Buy',G],buy:['Buy',G],hold:['Hold',AM],underperform:['Underperform',RD],sell:['Sell',RD]};
+    var k=KEY[an.key]||[an.key,AM],px=d.price,up=_num(an.tMean)&&_num(px)?(an.tMean/px-1)*100:null;
+    var bullAn=an.key==='buy'||an.key==='strong_buy',bearAn=an.key==='underperform'||an.key==='sell';
+    var ruleBuy=d.action==='BUY'||d.action==='ALERT',ruleNo=d.action==='AVOID'||d.action==='SELL';
+    var agree=ruleBuy&&bullAn?'<span style="color:'+G+'">Analysts and the chart rules agree.</span>':
+      ruleBuy&&bearAn?'<span style="color:'+RD+'">Analysts are negative while the chart setup is positive. They disagree, so be extra careful.</span>':
+      ruleBuy?'<span style="color:'+AM+'">Analysts are neutral. The positive case comes from the chart only.</span>':
+      ruleNo&&bullAn?'<span style="color:'+AM+'">Analysts like the business, but the chart rules say not now.</span>':
+      ruleNo&&bearAn?'<span style="color:'+RD+'">Analysts and the chart rules are both negative.</span>':'';
+    anHTML=head('WHAT ANALYSTS SAY &middot; THIS STOCK')+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:5px">'+
+        cell('Consensus',k[0],an.n+' analyst'+(an.n>1?'s':'')+(_num(an.mean)?' &middot; score '+an.mean.toFixed(1)+' / 5':''),k[1])+
+        (_num(an.tMean)?cell('Average target',_px(an.tMean),up!==null?(up>=0?'+':'')+up.toFixed(0)+'% vs today':'',up!==null&&up<0?RD:G):'')+
+        (_num(an.tLow)&&_num(an.tHigh)?cell('Target range',_px(an.tLow)+' - '+_px(an.tHigh),'lowest - highest'):'')+
+      '</div>'+
+      '<div style="font-size:10px;line-height:1.5">'+agree+
+        (up!==null&&up<0?' The price is already <b>above</b> the average analyst target.':'')+
+        (an.n<3?' Only '+an.n+' analyst'+(an.n>1?'s cover':' covers')+' it, so treat the consensus as a weak signal.':'')+'</div>'+
+      '<div style="font-size:9px;color:#3d5a78;margin-top:3px">Score: 1 = strong buy, 3 = hold, 5 = sell. Analyst targets are 12-month opinions on the business; the rules above are about timing. Source: Yahoo Finance consensus.</div>';
+  } else anHTML=head('WHAT ANALYSTS SAY &middot; THIS STOCK')+'<div style="font-size:10px">No analyst ratings on Yahoo Finance for this stock. That is common for smaller companies, and the decision relies on the chart rules alone.</div>';
+
+  // ── 3. Other signals on this stock ──
   var ev=[],pats=r.patterns||[],ich=r.ichimoku;
   pats.slice(0,2).forEach(function(p){var bull=p.kind==='bullish',buyish=d.action==='BUY'||d.action==='ALERT';
-    ev.push('<span style="color:'+(bull?'#00d084':'#ff4757')+'">'+(bull?'&#9650;':'&#9660;')+' '+p.name+'</span> '+(p.daysAgo===0?'today':p.daysAgo+'d ago')+(p.volConfirm?' on above-average volume':'')+(buyish&&!bull?' - <b>conflicts</b> with the buy setup, be cautious':buyish&&bull?' - supports the setup':''));});
-  if(ich)ev.push('Ichimoku: <b style="color:'+(ich.score>=2?'#00d084':ich.score<=-2?'#ff4757':'#ff9f43')+'">'+ich.verdict+'</b>');
-  var evid='';
-  if(bt.n){
-    evid='<b>How this BUY rule has done:</b> over the past year it fired '+bt.n+' times across this market&#39;s list. '+bt.winRate+'% reached +'+bt.target+'% before the stop, '+bt.stopRate+'% were stopped out, and '+bt.timeoutRate+'% were still open after '+bt.horizon+' sessions. Average result <b style="color:'+(bt.avgRet>=0?'#00d084':'#ff4757')+'">'+(bt.avgRet>=0?'+':'')+bt.avgRet+'% per trade</b> ('+(bt.expR>=0?'+':'')+bt.expR+'R). '+
-      (bt.expR>0?'Most trades lose a little and a minority win big - the edge only exists if every stop is honoured.':'The rule lost money over this period - breakouts have not been working, so be selective and keep size small.');
-  }
+    ev.push('<span style="color:'+(bull?G:RD)+'">'+(bull?'&#9650;':'&#9660;')+' '+p.name+'</span> '+(p.daysAgo===0?'today':p.daysAgo+'d ago')+(p.volConfirm?' on above-average volume':'')+(buyish&&!bull?' - <b>conflicts</b> with the buy setup, be cautious':buyish&&bull?' - supports the setup':''));});
+  if(ich)ev.push('Ichimoku for this stock: <b style="color:'+(ich.score>=2?G:ich.score<=-2?RD:AM)+'">'+ich.verdict+'</b>');
   var conflict='';
   if((d.action==='BUY'||d.action==='ALERT'||d.action==='WAIT')&&r.stage&&r.stage!==2)
-    conflict='<div style="margin-top:4px;color:#ff9f43"><b>Why other panels below disagree:</b> the stage panels label it Stage '+r.stage+' because they add an extra test - up-day volume must beat down-day volume over 60 sessions (here '+(_num(r.accDistRatio)?r.accDistRatio.toFixed(2)+'x':'n/a')+'). Minervini&#39;s published trend template does not include that test, and this decision follows the published rules. Treat the weaker volume as a caution: half size, and insist on the breakout volume.</div>';
+    conflict='<div style="margin-top:4px;color:'+AM+'"><b>Why other panels below disagree:</b> the stage panels label it Stage '+r.stage+' because they add an extra test - up-day volume must beat down-day volume over 60 sessions (here '+(_num(r.accDistRatio)?r.accDistRatio.toFixed(2)+'x':'n/a')+'). Minervini&#39;s published trend template does not include that test, and this decision follows the published rules. Treat the weaker volume as a caution: half size, and insist on the breakout volume.</div>';
   else if((d.action==='AVOID'||d.action==='SELL')&&r.stage===2)
-    conflict='<div style="margin-top:4px;color:#ff9f43"><b>Why the stage panel disagrees:</b> it labels this Stage 2, but the decision rules found '+(d.action==='SELL'?'a break of the 50-day on heavy volume':'failing trend rules')+' - the decision takes priority.</div>';
-  var mkTxt=mk.label?'<b>Market:</b> <span style="color:'+(mk.state==='uptrend'?'#00d084':mk.state==='pressure'?'#ff9f43':'#ff4757')+'">'+mk.label+'</span>'+(mk.state==='correction'?' - no new buys.':mk.state==='pressure'?' - buy only the best setups, smaller size.':' - new buys allowed.'):'';
+    conflict='<div style="margin-top:4px;color:'+AM+'"><b>Why the stage panel disagrees:</b> it labels this Stage 2, but the decision rules found '+(d.action==='SELL'?'a break of the 50-day on heavy volume':'failing trend rules')+' - the decision takes priority.</div>';
+  var other=head('OTHER SIGNALS &middot; THIS STOCK')+'<div style="font-size:10px;line-height:1.55">'+(ev.length?ev.join(' &nbsp;&middot;&nbsp; '):'No candlestick pattern in the last 3 sessions.')+conflict+'</div>';
+
+  // ── 4. Whole market: identical on every stock page ──
+  var mkTxt=mk.label?'<b>Market:</b> <span style="color:'+(mk.state==='uptrend'?G:mk.state==='pressure'?AM:RD)+'">'+mk.label+'</span>'+(mk.state==='correction'?' - no new buys.':mk.state==='pressure'?' - buy only the best setups, smaller size.':' - new buys allowed.'):'';
+  var evid='';
+  if(bt.n){
+    evid='<b>BUY rule track record:</b> over the past year the BUY signal fired '+bt.n+' times across '+MKT_NAME+'. '+bt.winRate+'% reached +'+bt.target+'% before the stop, '+bt.stopRate+'% were stopped out, and '+bt.timeoutRate+'% were still open after '+bt.horizon+' sessions. Average result <b style="color:'+(bt.avgRet>=0?G:RD)+'">'+(bt.avgRet>=0?'+':'')+bt.avgRet+'% per trade</b> ('+(bt.expR>=0?'+':'')+bt.expR+'R, where R is the amount risked). '+
+      (bt.expR>0?'Most trades lose a little and a minority win big - the edge only exists if every stop is honoured.':'The rule lost money over this period - breakouts have not been working, so be selective and keep size small.');
+  }
+  var market=(mkTxt||evid)?'<div style="margin-top:8px;padding:7px 9px;border:1px dashed var(--border);border-radius:6px;background:#0a112066">'+
+    head('MARKET CONDITIONS &amp; OVERALL BUY RULE TRACK RECORD ('+MKT_NAME.toUpperCase()+', NOT THIS STOCK)','var(--muted)')+
+    '<div style="font-size:10px;line-height:1.55">'+mkTxt+(evid?'<div style="margin-top:3px">'+evid+'</div>':'')+'</div></div>':'';
+
   return '<div style="grid-column:1/-1;background:linear-gradient(90deg,'+col+'14,transparent 60%);border:1px solid '+col+'55;border-left:4px solid '+col+';border-radius:8px;padding:12px 14px;margin-bottom:4px">'+
     '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start">'+
-      '<div style="min-width:190px;max-width:330px"><div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.8px">DECISION &middot; SEPA RULES</div>'+
+      '<div style="min-width:190px;max-width:360px"><div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.8px">DECISION &middot; SEPA RULES &middot; THIS STOCK</div>'+
       '<div style="font-size:24px;font-weight:900;color:'+col+';letter-spacing:-.5px;line-height:1.1;margin:2px 0">'+a[0]+'</div>'+
       '<div style="font-size:10px;color:#c9d6e8;font-weight:700">'+a[2]+' &middot; '+d.passed+'/8 trend rules</div>'+
       '<div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin-top:5px">'+d.reasons.join(' ')+'</div></div>'+
       '<div style="display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:280px">'+prices+'</div>'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1px 14px;min-width:330px">'+checks+'</div>'+
-    '</div>'+
-    '<div style="font-size:10px;color:var(--muted);line-height:1.55;margin-top:8px;padding-top:7px;border-top:1px solid '+col+'33">'+
-      (mkTxt?mkTxt+' &nbsp;&middot;&nbsp; ':'')+(ev.length?ev.join(' &nbsp;&middot;&nbsp; '):'No candlestick pattern in the last 3 sessions.')+
-      conflict+(evid?'<div style="margin-top:4px">'+evid+'</div>':'')+
-      '<div style="margin-top:4px;font-size:9px;color:#3d5a78">Rule-based, not a prediction: it says what Minervini&#39;s rules call for at today&#39;s close. Prices are levels to act at, not forecasts. Not financial advice.</div>'+
-    '</div></div>';
+    '</div>'+why+
+    '<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;padding-top:8px;border-top:1px solid '+col+'33;color:var(--muted)">'+
+      '<div style="flex:1;min-width:300px">'+anHTML+'</div>'+
+      '<div style="flex:1;min-width:260px">'+other+'</div>'+
+    '</div>'+market+
+    '<div style="margin-top:6px;font-size:9px;color:#3d5a78">Rule-based, not a prediction: it says what Minervini&#39;s rules call for at today&#39;s close. Prices are levels to act at, not forecasts. Not financial advice.</div>'+
+  '</div>';
 }
 function candleHTML(r){
   var p=r.patterns||[];

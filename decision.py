@@ -221,6 +221,39 @@ def _frame(df, bench):
     return f, tt
 
 
+def _check_value(name, f, has_bench=True):
+    """This stock's actual numbers behind one trend-template check, in plain words."""
+    try:
+        last = f.iloc[-1]
+        c, m50, m150, m200 = last["c"], last["ma50"], last["ma150"], last["ma200"]
+        n = lambda v: f"{v:.2f}" if v == v else "n/a"
+        if name == "Price above 150 and 200-day":
+            return f"price {n(c)} vs 150-day {n(m150)}, 200-day {n(m200)}"
+        if name == "150-day above 200-day":
+            return f"{n(m150)} vs {n(m200)}"
+        if name == "200-day rising for a month":
+            return f"{n(m200)} now vs {n(last['ma200_1m'])} a month ago"
+        if name == "50-day above 150 and 200-day":
+            return f"50-day {n(m50)} vs {n(m150)} / {n(m200)}"
+        if name == "Price above 50-day":
+            return f"price {n(c)} vs 50-day {n(m50)}"
+        if name == "At least 25% above 52-week low":
+            lo = last["lo252"]
+            return f"{(c / lo - 1) * 100:+.0f}% from the low of {n(lo)}" if lo == lo and lo else "n/a"
+        if name == "Within 25% of 52-week high":
+            hi = last["hi252"]
+            return f"{(c / hi - 1) * 100:+.0f}% from the high of {n(hi)}" if hi == hi and hi else "n/a"
+        if name == "Beating the index over 6 months":
+            if not has_bench or len(f) < 127 or last["rs"] != last["rs"]:
+                return "n/a (no index data)" if not has_bench else "n/a"
+            own = c / f["c"].iloc[-127] - 1
+            idx = own - last["rs"]
+            return f"stock {own * 100:+.0f}% vs index {idx * 100:+.0f}%"
+    except Exception:
+        pass
+    return ""
+
+
 def _stop_for(entry, low10):
     stop = entry * (1 - MAX_STOP)
     if low10 == low10 and entry * (1 - MAX_STOP) < low10 < entry * 0.98:
@@ -242,15 +275,27 @@ def decide(df, bench, market, liquid=True, locked=False):
     last, prev = f.iloc[-1], f.iloc[-2]
     px, pivot = last["c"], last["pivot"]
     vr = last["v"] / last["vol50"] if last["vol50"] else 0
-    checks = [{"ok": bool(tt[k].iloc[-1]), "text": k} for k in tt.columns]
+    checks = [{"ok": bool(tt[k].iloc[-1]), "text": k, "val": _check_value(k, f, bench is not None)} for k in tt.columns]
     passed = sum(x["ok"] for x in checks)
     enough_history = len(df) >= 200
     trend_ok = bool(last["tt_all"])
-    checks.append({"ok": bool(liquid and not locked), "text": "Trades normally (not thin or locked)"})
-    checks.append({"ok": bool(market.get("allowBuys", True)), "text": "Market not in correction"})
+    checks.append({"ok": bool(liquid and not locked), "text": "Trades normally (not thin or locked)",
+                   "val": "barely trading or locked" if locked else ("too thinly traded" if not liquid else "normal daily turnover")})
+    checks.append({"ok": bool(market.get("allowBuys", True)), "text": "Market not in correction",
+                   "val": market.get("label", "")})
 
     above_pivot = pivot == pivot and px > pivot
     dist = (px / pivot - 1) if pivot == pivot and pivot else None
+    # the three breakout tests that turn a stock that passes the trend rules into a BUY today
+    has_piv = pivot == pivot and bool(pivot)
+    trigger = [
+        {"ok": bool(above_pivot), "text": f"Closed above its {PIVOT_LOOKBACK}-day high (the pivot)",
+         "val": f"close {px:.2f} vs pivot {pivot:.2f}" if has_piv else "no pivot yet"},
+        {"ok": bool(dist is not None and dist <= MAX_CHASE), "text": f"Not more than {MAX_CHASE*100:.0f}% above the pivot (not chasing)",
+         "val": f"{dist*100:+.1f}% from the pivot" if dist is not None else "-"},
+        {"ok": bool(vr >= BREAKOUT_VOL), "text": f"Volume at least {BREAKOUT_VOL:g}x normal",
+         "val": f"{vr:.1f}x the 50-day average" if vr == vr else "-"},
+    ]
     reasons = []
     action = "WATCH"
 
@@ -304,7 +349,7 @@ def decide(df, bench, market, liquid=True, locked=False):
         entry, stop = None, None
     risk = (entry - stop) / entry if entry and stop else None
     out = {
-        "action": action, "reasons": reasons, "checks": checks,
+        "action": action, "reasons": reasons, "checks": checks, "trigger": trigger,
         "passed": passed, "total": 8,
         "price": _f(px), "pivot": _f(pivot), "distPivot": _f(dist * 100, 1) if dist is not None else None,
         "volRatio": _f(vr, 2),

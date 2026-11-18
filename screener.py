@@ -751,6 +751,28 @@ def enrich_stock(r):
         if r["epsGrowth"] is not None and r["epsGrowth"] > 0: fs += 1
         r["fundScore"] = min(fs, 3)
 
+        # Analyst consensus - comes in the same t.info response, so no extra request
+        try:
+            def _an(v):
+                try:
+                    v = float(v)
+                    return round(v, 2) if v == v and v > 0 else None
+                except Exception:
+                    return None
+            n_an = int(inf2.get('numberOfAnalystOpinions') or 0)
+            rkey = str(inf2.get('recommendationKey') or '').lower()
+            if n_an > 0 and rkey and rkey != 'none':
+                r["analyst"] = {
+                    "n": n_an, "key": rkey,
+                    "mean": _an(inf2.get('recommendationMean')),
+                    "tMean": _an(inf2.get('targetMeanPrice')),
+                    "tMed": _an(inf2.get('targetMedianPrice')),
+                    "tHigh": _an(inf2.get('targetHighPrice')),
+                    "tLow": _an(inf2.get('targetLowPrice')),
+                }
+        except Exception:
+            pass
+
         # Calendar (inline)
         try:
             today = today_ny()
