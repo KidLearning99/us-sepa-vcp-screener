@@ -759,6 +759,9 @@ def enrich_stock(r):
                     return round(v, 2) if v == v and v > 0 else None
                 except Exception:
                     return None
+            # recommendationKey is only present when Yahoo returned its fundamentals;
+            # without it we cannot tell "no coverage" from "request failed"
+            r["analystChecked"] = 'recommendationKey' in inf2
             n_an = int(inf2.get('numberOfAnalystOpinions') or 0)
             rkey = str(inf2.get('recommendationKey') or '').lower()
             if n_an > 0 and rkey and rkey != 'none':

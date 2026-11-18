@@ -929,6 +929,7 @@ function cardNote(name,e){
 var ACT={BUY:['BUY','#00d084','Breakout confirmed'],ALERT:['SET ALERT','#3b82f6','Ready - waiting for the trigger'],WAIT:['WAIT','#ff9f43','Extended - do not chase'],WATCH:['WATCH','#8aa4c0','Not ready yet'],AVOID:['AVOID','#ff4757','Fails the rules'],SELL:['SELL SIGNAL','#ff4757','Exit signal for holders']};
 function _px(v){return _num(v)?CUR+v.toFixed(2):'-';}
 var MKT_NAME='all US stocks';
+function YSYM(r){return r.ticker;}
 function decisionHTML(r){
   var d=r.decision; if(!d)return '';
   var a=ACT[d.action]||ACT.WATCH,col=a[1],bt=(typeof BT!=='undefined'&&BT)||{},mk=(typeof MKT!=='undefined'&&MKT)||{};
@@ -966,51 +967,78 @@ function decisionHTML(r){
     '<div style="display:flex;flex-wrap:wrap;gap:6px">'+gHTML+'</div></div>';
 
   // ── 2. WHAT ANALYSTS SAY about this stock ──
-  var an=r.analyst,anHTML;
+  var an=r.analyst,anHTML,sym=YSYM(r);
+  var links='<div style="font-size:9.5px;margin-top:4px">Check other sources: '+
+    '<a href="https://finance.yahoo.com/quote/'+encodeURIComponent(sym)+'/analysis" target="_blank" rel="noopener" style="color:#3b82f6">Yahoo Finance</a> &middot; '+
+    '<a href="https://www.marketscreener.com/search/?q='+encodeURIComponent(r.name||r.ticker)+'" target="_blank" rel="noopener" style="color:#3b82f6">MarketScreener</a></div>';
   if(an&&an.n){
-    var KEY={strong_buy:['Strong Buy',G],buy:['Buy',G],hold:['Hold',AM],underperform:['Underperform',RD],sell:['Sell',RD]};
-    var k=KEY[an.key]||[an.key,AM],px=d.price,up=_num(an.tMean)&&_num(px)?(an.tMean/px-1)*100:null;
+    var KEY={strong_buy:['Strong Buy',G,'think it will do much better than the market'],buy:['Buy',G,'think it will do better than the market'],hold:['Hold',AM,'think it will do about the same as the market'],underperform:['Underperform',RD,'think it will do worse than the market'],sell:['Sell',RD,'think it will do much worse than the market']};
+    var k=KEY[an.key]||[an.key,AM,'have a mixed view'],px=d.price,up=_num(an.tMean)&&_num(px)?(an.tMean/px-1)*100:null;
     var bullAn=an.key==='buy'||an.key==='strong_buy',bearAn=an.key==='underperform'||an.key==='sell';
     var ruleBuy=d.action==='BUY'||d.action==='ALERT',ruleNo=d.action==='AVOID'||d.action==='SELL';
-    var agree=ruleBuy&&bullAn?'<span style="color:'+G+'">Analysts and the chart rules agree.</span>':
-      ruleBuy&&bearAn?'<span style="color:'+RD+'">Analysts are negative while the chart setup is positive. They disagree, so be extra careful.</span>':
-      ruleBuy?'<span style="color:'+AM+'">Analysts are neutral. The positive case comes from the chart only.</span>':
-      ruleNo&&bullAn?'<span style="color:'+AM+'">Analysts like the business, but the chart rules say not now.</span>':
-      ruleNo&&bearAn?'<span style="color:'+RD+'">Analysts and the chart rules are both negative.</span>':'';
+    var lines=[];
+    lines.push('<b>'+an.n+' analyst'+(an.n>1?'s':'')+'</b> '+(an.n>1?'cover':'covers')+' this stock. On average they rate it <b style="color:'+k[1]+'">'+k[0]+'</b>, meaning they '+k[2]+' over the next 12 months.');
+    if(up!==null)lines.push(up>=0?'Their average price target is <b>'+_px(an.tMean)+'</b>, about <b style="color:'+G+'">'+up.toFixed(0)+'% above</b> today&#39;s price.':
+      'Their average price target is <b>'+_px(an.tMean)+'</b>, about <b style="color:'+RD+'">'+Math.abs(up).toFixed(0)+'% below</b> today&#39;s price.');
+    lines.push(ruleBuy&&bullAn&&up!==null&&up<0?'<span style="color:'+AM+'">The analysts and the chart both like it, but the price is already above the analysts&#39; target, so they see little room left to rise.</span>':
+      ruleBuy&&bullAn?'<span style="color:'+G+'">&#10003; The analysts and the chart both look positive.</span>':
+      ruleBuy&&bearAn?'<span style="color:'+RD+'">&#9888; The chart looks good, but the analysts do not. When they disagree, be extra careful.</span>':
+      ruleBuy?'<span style="color:'+AM+'">The analysts are neutral, so the reason to buy comes from the chart only.</span>':
+      ruleNo&&bullAn?'<span style="color:'+AM+'">The analysts like the company, but the chart says this is not the time to buy.</span>':
+      ruleNo&&bearAn?'<span style="color:'+RD+'">The analysts and the chart are both negative.</span>':
+      'The chart says wait, so there is nothing to act on yet whatever the analysts think.');
+    if(an.n<3)lines.push('With only '+an.n+' analyst'+(an.n>1?'s':'')+', do not give this much weight.');
     anHTML=head('WHAT ANALYSTS SAY &middot; THIS STOCK')+
       '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:5px">'+
-        cell('Consensus',k[0],an.n+' analyst'+(an.n>1?'s':'')+(_num(an.mean)?' &middot; score '+an.mean.toFixed(1)+' / 5':''),k[1])+
-        (_num(an.tMean)?cell('Average target',_px(an.tMean),up!==null?(up>=0?'+':'')+up.toFixed(0)+'% vs today':'',up!==null&&up<0?RD:G):'')+
-        (_num(an.tLow)&&_num(an.tHigh)?cell('Target range',_px(an.tLow)+' - '+_px(an.tHigh),'lowest - highest'):'')+
+        cell('Analyst rating',k[0],an.n+' analyst'+(an.n>1?'s':''),k[1])+
+        (_num(an.tMean)?cell('Average target',_px(an.tMean),up!==null?(up>=0?'+':'')+up.toFixed(0)+'% from today':'',up!==null&&up<0?RD:G):'')+
+        (_num(an.tLow)&&_num(an.tHigh)&&an.tLow!==an.tHigh?cell('Lowest - highest target',_px(an.tLow)+' - '+_px(an.tHigh)):'')+
       '</div>'+
-      '<div style="font-size:10px;line-height:1.5">'+agree+
-        (up!==null&&up<0?' The price is already <b>above</b> the average analyst target.':'')+
-        (an.n<3?' Only '+an.n+' analyst'+(an.n>1?'s cover':' covers')+' it, so treat the consensus as a weak signal.':'')+'</div>'+
-      '<div style="font-size:9px;color:#3d5a78;margin-top:3px">Score: 1 = strong buy, 3 = hold, 5 = sell. Analyst targets are 12-month opinions on the business; the rules above are about timing. Source: Yahoo Finance consensus.</div>';
-  } else anHTML=head('WHAT ANALYSTS SAY &middot; THIS STOCK')+'<div style="font-size:10px">No analyst ratings on Yahoo Finance for this stock. That is common for smaller companies, and the decision relies on the chart rules alone.</div>';
+      '<div style="font-size:10px;line-height:1.55;color:#c9d6e8">'+lines.map(function(x){return '<div>'+x+'</div>';}).join('')+'</div>'+
+      '<div style="font-size:9px;color:#5a7a9a;margin-top:3px">Analysts judge the company over 12 months. The chart rules above decide when to buy. Source: Yahoo Finance.</div>'+links;
+  } else if(r.analystChecked===false){
+    anHTML=head('WHAT ANALYSTS SAY &middot; THIS STOCK')+'<div style="font-size:10px;line-height:1.55;color:#c9d6e8">Analyst data could not be loaded for this stock today, because Yahoo Finance was busy. It will try again at the next update.</div>'+links;
+  } else {
+    anHTML=head('WHAT ANALYSTS SAY &middot; THIS STOCK')+'<div style="font-size:10px;line-height:1.55;color:#c9d6e8">No analyst ratings were found on Yahoo Finance. Few analysts follow smaller companies, so this is normal and is not a bad sign. The rating above is based on the chart only.</div>'+links;
+  }
 
   // ── 3. Other signals on this stock ──
   var ev=[],pats=r.patterns||[],ich=r.ichimoku;
   pats.slice(0,2).forEach(function(p){var bull=p.kind==='bullish',buyish=d.action==='BUY'||d.action==='ALERT';
-    ev.push('<span style="color:'+(bull?G:RD)+'">'+(bull?'&#9650;':'&#9660;')+' '+p.name+'</span> '+(p.daysAgo===0?'today':p.daysAgo+'d ago')+(p.volConfirm?' on above-average volume':'')+(buyish&&!bull?' - <b>conflicts</b> with the buy setup, be cautious':buyish&&bull?' - supports the setup':''));});
-  if(ich)ev.push('Ichimoku for this stock: <b style="color:'+(ich.score>=2?G:ich.score<=-2?RD:AM)+'">'+ich.verdict+'</b>');
+    ev.push('<div><span style="color:'+(bull?G:RD)+';font-weight:700">'+(bull?'&#9650; ':'&#9660; ')+p.name+'</span> candle '+(p.daysAgo===0?'today':p.daysAgo===1?'yesterday':p.daysAgo+' days ago')+
+      (p.volConfirm?', on higher than normal volume':'')+'. This is a '+(bull?'positive':'negative')+' sign'+
+      (buyish&&!bull?' and a <b>warning</b> against buying right now.':buyish&&bull?' that supports buying.':'.')+'</div>');});
+  if(ich){var ic=ich.score>=2?G:ich.score<=-2?RD:AM;
+    ev.push('<div><b>Ichimoku</b> (a second trend check): <b style="color:'+ic+'">'+ich.verdict+'</b>. '+
+      (ich.score===4?'All 4 of its signals say the trend is up.':ich.score>=2?'Most of its signals say the trend is up.':ich.score===-4?'All 4 of its signals say the trend is down.':ich.score<=-2?'Most of its signals say the trend is down.':'Its signals are mixed, so there is no clear trend.')+'</div>');}
   var conflict='';
   if((d.action==='BUY'||d.action==='ALERT'||d.action==='WAIT')&&r.stage&&r.stage!==2)
-    conflict='<div style="margin-top:4px;color:'+AM+'"><b>Why other panels below disagree:</b> the stage panels label it Stage '+r.stage+' because they add an extra test - up-day volume must beat down-day volume over 60 sessions (here '+(_num(r.accDistRatio)?r.accDistRatio.toFixed(2)+'x':'n/a')+'). Minervini&#39;s published trend template does not include that test, and this decision follows the published rules. Treat the weaker volume as a caution: half size, and insist on the breakout volume.</div>';
+    conflict='<div style="margin-top:4px;color:'+AM+'"><b>Why the Stage panel further down disagrees:</b> it uses one extra test, that buying volume beats selling volume over the last 60 days. This stock fails that test ('+(_num(r.accDistRatio)?r.accDistRatio.toFixed(2)+'x':'n/a')+'). Minervini&#39;s own rules do not include it, so the decision ignores it. Still, treat it as a caution: buy a smaller amount, and only on a high-volume day.</div>';
   else if((d.action==='AVOID'||d.action==='SELL')&&r.stage===2)
-    conflict='<div style="margin-top:4px;color:'+AM+'"><b>Why the stage panel disagrees:</b> it labels this Stage 2, but the decision rules found '+(d.action==='SELL'?'a break of the 50-day on heavy volume':'failing trend rules')+' - the decision takes priority.</div>';
-  var other=head('OTHER SIGNALS &middot; THIS STOCK')+'<div style="font-size:10px;line-height:1.55">'+(ev.length?ev.join(' &nbsp;&middot;&nbsp; '):'No candlestick pattern in the last 3 sessions.')+conflict+'</div>';
+    conflict='<div style="margin-top:4px;color:'+AM+'"><b>Why the Stage panel further down disagrees:</b> it calls this a Stage 2 uptrend, but the decision rules found '+(d.action==='SELL'?'a heavy-volume drop below the 50-day average':'trend rules that fail')+'. The decision above is the one to follow.</div>';
+  var other=head('OTHER SIGNALS &middot; THIS STOCK')+'<div style="font-size:10px;line-height:1.55;color:#c9d6e8">'+(ev.length?ev.join(''):'<div>No notable candle shapes in the last 3 days.</div>')+conflict+'</div>';
 
   // ── 4. Whole market: identical on every stock page ──
-  var mkTxt=mk.label?'<b>Market:</b> <span style="color:'+(mk.state==='uptrend'?G:mk.state==='pressure'?AM:RD)+'">'+mk.label+'</span>'+(mk.state==='correction'?' - no new buys.':mk.state==='pressure'?' - buy only the best setups, smaller size.':' - new buys allowed.'):'';
+  var mkTxt='';
+  if(mk.label){var mc=mk.state==='uptrend'?G:mk.state==='pressure'?AM:RD;
+    mkTxt='<div><b>Market mood:</b> <b style="color:'+mc+'">'+mk.label+'</b>. '+
+      (mk.state==='uptrend'?'The market is rising steadily. Normal buying is fine.':
+       mk.state==='pressure'?'The market is still rising overall, but the rise is getting shaky. Only buy the strongest setups, and put in less money than usual.':
+       mk.state==='correction'?'The market is falling. The rules say do not buy anything new until it recovers.':'The market trend could not be worked out today.')+'</div>';}
   var evid='';
   if(bt.n){
-    evid='<b>BUY rule track record:</b> over the past year the BUY signal fired '+bt.n+' times across '+MKT_NAME+'. '+bt.winRate+'% reached +'+bt.target+'% before the stop, '+bt.stopRate+'% were stopped out, and '+bt.timeoutRate+'% were still open after '+bt.horizon+' sessions. Average result <b style="color:'+(bt.avgRet>=0?G:RD)+'">'+(bt.avgRet>=0?'+':'')+bt.avgRet+'% per trade</b> ('+(bt.expR>=0?'+':'')+bt.expR+'R, where R is the amount risked). '+
-      (bt.expR>0?'Most trades lose a little and a minority win big - the edge only exists if every stop is honoured.':'The rule lost money over this period - breakouts have not been working, so be selective and keep size small.');
+    var good=bt.avgRet>=0;
+    evid='<div style="margin-top:4px"><b>How BUY signals have worked over the past year:</b> there were <b>'+bt.n+'</b> BUY signals across '+MKT_NAME+'. Out of every 100:</div>'+
+      '<div style="margin-left:10px">&bull; <b style="color:'+G+'">'+bt.winRate+'</b> rose to the +'+bt.target+'% target</div>'+
+      '<div style="margin-left:10px">&bull; <b style="color:'+RD+'">'+bt.stopRate+'</b> fell to the stop-loss and were sold for a small loss (up to '+bt.maxStop+'%)</div>'+
+      '<div style="margin-left:10px">&bull; <b>'+bt.timeoutRate+'</b> had done neither after 3 months</div>'+
+      '<div><b>Overall:</b> '+(good?'a small profit of about <b style="color:'+G+'">+'+bt.avgRet+'%</b> per trade on average. The few big winners pay for the many small losses, but only if you always sell when the stop-loss is hit.':
+        'a small loss of about <b style="color:'+RD+'">'+bt.avgRet+'%</b> per trade on average. BUY signals have not been working well lately, so be very picky and buy small.')+'</div>';
   }
   var market=(mkTxt||evid)?'<div style="margin-top:8px;padding:7px 9px;border:1px dashed var(--border);border-radius:6px;background:#0a112066">'+
     head('MARKET CONDITIONS &amp; OVERALL BUY RULE TRACK RECORD ('+MKT_NAME.toUpperCase()+', NOT THIS STOCK)','var(--muted)')+
-    '<div style="font-size:10px;line-height:1.55">'+mkTxt+(evid?'<div style="margin-top:3px">'+evid+'</div>':'')+'</div></div>':'';
+    '<div style="font-size:9px;color:#5a7a9a;margin:-2px 0 4px">This box is the same on every stock page. It describes the whole market, not this stock.</div>'+
+    '<div style="font-size:10px;line-height:1.55;color:#c9d6e8">'+mkTxt+evid+'</div></div>':'';
 
   return '<div style="grid-column:1/-1;background:linear-gradient(90deg,'+col+'14,transparent 60%);border:1px solid '+col+'55;border-left:4px solid '+col+';border-radius:8px;padding:12px 14px;margin-bottom:4px">'+
     '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start">'+
@@ -1024,7 +1052,7 @@ function decisionHTML(r){
       '<div style="flex:1;min-width:300px">'+anHTML+'</div>'+
       '<div style="flex:1;min-width:260px">'+other+'</div>'+
     '</div>'+market+
-    '<div style="margin-top:6px;font-size:9px;color:#3d5a78">Rule-based, not a prediction: it says what Minervini&#39;s rules call for at today&#39;s close. Prices are levels to act at, not forecasts. Not financial advice.</div>'+
+    '<div style="margin-top:6px;font-size:9px;color:#3d5a78">This shows what the chart rules say at today&#39;s close. It is not a prediction, and not financial advice.</div>'+
   '</div>';
 }
 function candleHTML(r){
