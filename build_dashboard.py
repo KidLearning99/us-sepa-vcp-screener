@@ -766,7 +766,7 @@ function fullSummary(r,passed,testable){
   // ── Key levels
   var res=(t.res||[])[0],sup=(t.sup||[])[0],lv='',trigger=null,floor=null;
   var ceilings=[];if(res)ceilings.push(res.v);if(_num(t.donHi)&&t.donHi>px)ceilings.push(t.donHi);if(_num(t.sar)&&!t.sarBull&&t.sar>px)ceilings.push(t.sar);
-  var near=ceilings.filter(function(v){return (v-px)/px<=0.04;});
+  var near=ceilings.filter(function(v){return (v-px)/px<=0.04;}).sort(function(x,y){return x-y;}).filter(function(v,i,arr){return i===0||Math.abs(v-arr[i-1])/v>0.005;});
   if(near.length)trigger=Math.max.apply(null,near);else if(ceilings.length)trigger=Math.min.apply(null,ceilings);
   if(res)lv+='Nearest resistance '+f2(res.v)+' ('+pc((res.v-px)/px*100)+(res.n>1?', tested '+res.n+' times':'')+'). ';
   else lv+='There is no swing resistance overhead in six months - clear air above. ';
@@ -797,7 +797,7 @@ function fullSummary(r,passed,testable){
 
   var L=lockInfo(r),liqTxt='';
   if(L.days>=2){
-    sec.unshift(['Circuit lock','<b style=\"color:'+R+'\">For the last '+L.days+' sessions the stock has traded at a single price all day</b> (high = low = close), moving about '+(L.step||0).toFixed(1)+'% '+(L.up?'up':'down')+' each day - the exchange&#39;s daily price limit. '+(L.up?'Buyers are queued at the limit with almost no sellers, so you generally cannot buy at the shown price.':'Sellers are queued at the limit with almost no buyers, so you generally cannot sell.')+' Every indicator here is computed from those one-price bars and overstates the trend. Locked runs like this are typical of thinly traded or speculative stocks and can reverse just as abruptly.']);
+    sec.unshift([HAS_LIMITS?'Circuit lock':'Barely trading','<b style=\"color:'+R+'\">For the last '+L.days+' sessions the stock has traded at a single price all day</b> (high = low = close), moving about '+(L.step||0).toFixed(1)+'% '+(L.up?'up':'down')+' each day'+(HAS_LIMITS?' - the exchange&#39;s daily price limit. '+(L.up?'Buyers are queued at the limit with almost no sellers, so you generally cannot buy at the shown price.':'Sellers are queued at the limit with almost no buyers, so you generally cannot sell.'):'. This market has no daily price limits, so a one-price day means almost nothing traded - there is effectively no market in the stock right now.')+' Every indicator here is computed from those one-price bars and overstates the trend. Locked runs like this are typical of thinly traded or speculative stocks and can reverse just as abruptly.']);
   }
   if(_num(L.adv))liqTxt='Average traded value over 20 sessions is about '+LIQ_FMT(L.adv)+' a day'+(L.illiquid?' - <b>very thin</b>: a modest order can move the price, and exiting may be hard.':'.');
   // ── What to watch
@@ -810,7 +810,7 @@ function fullSummary(r,passed,testable){
   else if(stg!==2&&trendOK)wt+=' The price structure meets Stage 2, but the stage model is not yet convinced the advance is established - recheck after the next base.';
   else if(stg!==2)wt+=' For a SEPA entry it still needs to reach Stage 2: price above a rising 150- and 200-day with the 50-day above both, and up-day volume beating down-day volume.';
   if(r.ipo)wt+=' As a recent listing, judge it on its first orderly base rather than the 200-day rules.';
-  if(L.days>=2){vd='CIRCUIT-LOCKED';vc=R;wt='Nothing is actionable while it is locked. Wait for the lock to break and normal two-way trading to resume, then let a proper base form - the indicators will only mean something once the bars have a real range again.';}
+  if(L.days>=2){vd=HAS_LIMITS?'CIRCUIT-LOCKED':'NOT TRADING';vc=R;wt='Nothing is actionable while it is locked. Wait for the lock to break and normal two-way trading to resume, then let a proper base form - the indicators will only mean something once the bars have a real range again.';}
   else if(L.illiquid){vd=vd+' &middot; THIN';wt+=' Size any position to the stock&#39;s low liquidity.';}
 
   var h='<div style=\"font-size:10px;color:var(--muted);line-height:1.55;padding:10px 12px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);border-left:3px solid '+vc+'\">'+
@@ -823,6 +823,7 @@ function fullSummary(r,passed,testable){
   h+='<p style=\"margin:0;font-size:9px;color:#3d5a78\">The SEPA method buys strength already in motion and depends on cutting failures quickly; it assumes a trending broad market. Catalysts and the market backdrop are yours to judge. Not financial advice.</p></div>';
   return h;
 }
+var HAS_LIMITS=false;
 var LIQ_MIN=1e6;
 function LIQ_FMT(v){return v>=1e9?CUR+(v/1e9).toFixed(1)+'B':CUR+(v/1e6).toFixed(1)+'M';}
 function lockInfo(r){
@@ -886,7 +887,7 @@ function levelNotes(r){
   }
 
   // 6. Practical
-  if(L.days>=2)todo.unshift('<b style="color:#ff4757">It is circuit-locked</b> (one price all day for '+L.days+' sessions). You generally cannot trade at the shown price, so none of the levels above can be used until it trades normally.');
+  if(L.days>=2)todo.unshift('<b style="color:#ff4757">'+(HAS_LIMITS?'It is circuit-locked':'It is barely trading')+'</b> (one price all day for '+L.days+' sessions). You generally cannot trade at the shown price, so none of the levels above can be used until it trades normally.');
   else if(L.illiquid)todo.unshift('<b style="color:#ff9f43">It trades very thinly</b> (about '+LIQ_FMT(L.adv)+' a day), so a small order can move the price and getting out can be hard.');
   if(big&&L.days<2&&!L.illiquid)todo.push('It more than '+(((f.hi-f.lo)/f.lo)>=1?'doubled':'jumped')+' in about 3 months. Runs that fast often swing hard both ways, so keep position size small.');
   if(todo.length)o.push(H('What this means in practice')+todo.map(function(x){return '<p style="margin:0 0 3px">&bull; '+x+'</p>';}).join(''));
@@ -1103,7 +1104,7 @@ function row(r,i){
   }
   return '<tr class="main-row" onclick="tog('+i+')" id="mr'+i+'">'+
     '<td style="color:#253550;font-size:10px">'+(i+1)+'</td>'+
-    '<td><div class="tkr">'+r.ticker+(function(){var L=lockInfo(r);return L.days>=2?'<span style="font-size:8px;font-weight:800;color:#ff4757;border:1px solid #ff475766;background:#ff475714;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Traded at one price for '+L.days+' sessions (circuit limit)">LOCKED</span>':L.illiquid?'<span style="font-size:8px;font-weight:800;color:#ff9f43;border:1px solid #ff9f4366;background:#ff9f4314;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Average traded value under '+LIQ_FMT(LIQ_MIN)+' a day">THIN</span>':'';})()+(r.ipo?'<span style="font-size:8px;font-weight:800;color:#a78bfa;border:1px solid #a78bfa66;background:#a78bfa14;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Listed '+r.listDate+' - '+r.sessions+' sessions">IPO</span>':'')+'</div><div class="co" title="'+r.name+'">'+r.name+'</div></td>'+
+    '<td><div class="tkr">'+r.ticker+(function(){var L=lockInfo(r);return L.days>=2?'<span style="font-size:8px;font-weight:800;color:#ff4757;border:1px solid #ff475766;background:#ff475714;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Traded at one price for '+L.days+' sessions'+(HAS_LIMITS?' (circuit limit)':' (almost no trades)')+'">'+(HAS_LIMITS?'LOCKED':'NO TRADES')+'</span>':L.illiquid?'<span style="font-size:8px;font-weight:800;color:#ff9f43;border:1px solid #ff9f4366;background:#ff9f4314;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Average traded value under '+LIQ_FMT(LIQ_MIN)+' a day">THIN</span>':'';})()+(r.ipo?'<span style="font-size:8px;font-weight:800;color:#a78bfa;border:1px solid #a78bfa66;background:#a78bfa14;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:middle" title="Listed '+r.listDate+' - '+r.sessions+' sessions">IPO</span>':'')+'</div><div class="co" title="'+r.name+'">'+r.name+'</div></td>'+
     '<td>'+stageBdg+'</td>'+
     '<td>'+bdg+'</td>'+
     '<td><div style="display:flex;align-items:center;gap:3px"><div class="pips">'+ps+'</div><span style="font-size:10px;color:var(--muted)">'+sc+'</span></div></td>'+
