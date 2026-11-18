@@ -834,37 +834,65 @@ function lockInfo(r){
 }
 function _fmtVal(v){return LIQ_FMT(v);}
 function levelNotes(r){
-  var t=r.tech||{},px=r.price,f2=function(v){return CUR+v.toFixed(2);},o=[];
+  var t=r.tech||{},px=r.price,f0=function(v){return CUR+(v>=100?Math.round(v).toLocaleString():v.toFixed(2));};
   if(!_num(px))return '';
-  var res=(t.res||[])[0],sup=(t.sup||[])[0];
-  o.push('<b style=\"color:var(--text)\">What support and resistance are.</b> Prices where the stock has repeatedly turned. <b>Resistance</b> is a ceiling: earlier buyers who are sitting on losses sell to get out at break-even, and sellers have outnumbered buyers there before. <b>Support</b> is a floor where buyers stepped in before. The more times a level was tested (the &times; count), the more it matters. Once a level breaks, the roles flip - broken resistance often becomes support. This screen finds them from swing highs and lows over the last 6 months, grouping turns within about 1.5% of each other.');
-  // Support / resistance
-  if(!res)o.push('<b>For this stock - resistance:</b> there are no swing highs above the price in the last 6 months, so no one is sitting on old losses waiting to sell - but there is also no level to aim for. In this situation traders trail a stop rather than set a target.');
-  else o.push('<b>For this stock - resistance:</b> '+f2(res.v)+' is the first ceiling'+(res.n>1?', where the stock turned down '+res.n+' times':'')+'. Sellers who bought there often exit when price returns, so expect hesitation; a close through it on strong volume turns it into support.');
-  if(sup){var dd=(px-sup.v)/px*100;
-    o.push('<b>Support:</b> '+f2(sup.v)+' is the nearest floor, '+dd.toFixed(1)+'% below'+(sup.n>1?' (held '+sup.n+' times)':'')+'. '+(dd>25?'That is a long way down: after a near-vertical run the chart has no nearby floor, so a reversal could fall far before buyers step in.':dd<4?'It is close, which keeps the downside to a natural stop small.':'A break below it would undo the structure of the last few months.'));}
-  // Fibonacci
-  o.push('<b style=\"color:var(--text)\">What Fibonacci levels are.</b> After a big move, prices tend to retrace part of it before continuing. Traders mark 23.6%, 38.2%, 50%, 61.8% and 78.6% of the move (ratios from the Fibonacci sequence; 50% is just the halfway point) and watch for pullbacks or bounces to pause there. They are not magic - they work partly because so many traders watch the same levels - so they are most useful where they line up with support, resistance or a moving average. This screen measures the biggest move in the last 60 sessions.');
-  if(t.fib){var f=t.fib,lv=f.lv,keys=['0.236','0.382','0.5','0.618','0.786'];
-    var below=keys.filter(function(k){return _num(lv[k])&&lv[k]<px;}).length;
-    if(f.up){
-      if(below===keys.length)o.push('<b>For this stock:</b> the stock has not pulled back at all from its 60-day rise - every retracement level is below the price. A healthy pullback in a strong trend usually holds the 38.2-50% zone ('+f2(lv['0.5'])+' - '+f2(lv['0.382'])+'); falling through 61.8% ('+f2(lv['0.618'])+') would mean the rise has largely failed.');
-      else o.push('<b>For this stock:</b> the stock is retracing its 60-day rise ('+f2(f.lo)+' to '+f2(f.hi)+'). Shallow pullbacks (23.6-38.2%) are typical of strong trends; holding 50% ('+f2(lv['0.5'])+') keeps the uptrend intact, while losing 61.8% ('+f2(lv['0.618'])+') usually means it is over.');
+  var pc=function(a,b){return Math.abs((a-b)/b*100);};
+  var res=(t.res||[])[0],sup=(t.sup||[])[0],f=t.fib,L=lockInfo(r),o=[],todo=[];
+  var H=function(x){return '<p style="margin:8px 0 3px;font-weight:800;color:var(--text);font-size:10px">'+x+'</p>';};
+  var P=function(x){return '<p style="margin:0 0 4px">'+x+'</p>';};
+  var big=false,nearTop=false;
+
+  // 1. The setup
+  if(f&&_num(f.hi)&&_num(f.lo)&&f.lo>0){
+    var mv=(f.hi-f.lo)/f.lo*100;big=f.up&&mv>=60;
+    if(f.up){nearTop=pc(f.hi,px)<3;
+      o.push(H('The setup')+P('Over the last 60 sessions it rose from about <b>'+f0(f.lo)+' to '+f0(f.hi)+'</b> (+'+mv.toFixed(0)+'%). It is now at <b>'+f0(px)+'</b>, '+(nearTop?'right at the top of that run.':pc(f.hi,px).toFixed(0)+'% below that high.')));
     } else {
-      o.push('<b>For this stock:</b> these levels measure the bounce after the 60-day fall from '+f2(f.hi)+' to '+f2(f.lo)+'. Rebounds in a downtrend often stall at 38.2-61.8% ('+f2(lv['0.382'])+' - '+f2(lv['0.618'])+'); getting back above 61.8% suggests the fall is being reversed rather than just bounced.');
+      o.push(H('The setup')+P('Over the last 60 sessions it fell from about <b>'+f0(f.hi)+' to '+f0(f.lo)+'</b> (-'+((f.hi-f.lo)/f.hi*100).toFixed(0)+'%). It is now at <b>'+f0(px)+'</b>, '+((px-f.lo)/f.lo*100).toFixed(0)+'% above that low.'));
     }
   }
-  // Pivots
-  if(t.pivots){var p=t.pivots;
-    o.push('<b style=\"color:var(--text)\">What pivot points are.</b> A day-trading formula: the pivot is the average of the last session&#39;s high, low and close; R1-R3 are projected ceilings and S1-S3 projected floors for the next session. They describe the next day only, not the trend.');
-    if(_num(p.R1)&&_num(p.S1)&&Math.abs(p.R1-p.S1)<1e-6)o.push('<b>For this stock:</b> every level equals '+f2(p.P)+' because the last session&#39;s high, low and close were identical - the stock traded at a single price all day. Pivots carry no information until it trades in a normal range again.');
-    else o.push('<b>For this stock:</b> short-term levels for the next session, from the last day&#39;s high, low and close. Price is '+(px>=p.P?'above':'below')+' the pivot ('+f2(p.P)+'), a mild '+(px>=p.P?'positive':'negative')+'. R1 '+f2(p.R1)+' is the first intraday ceiling and S1 '+f2(p.S1)+' the first floor; they matter mostly to day traders.');
+
+  // 2. Ceiling
+  if(!res)o.push(H('Ceiling (resistance): none')+P('It is above every price of the last 6 months, so nobody is sitting on a loss waiting to sell. That is good, but there is also no obvious target. The usual answer is a <b>trailing stop</b>: a stop you keep raising as the price climbs.'));
+  else o.push(H('Ceiling (resistance): '+f0(res.v)+', '+pc(res.v,px).toFixed(1)+'% above')+P('The stock turned down here'+(res.n>1?' '+res.n+' times':'')+' before. People who bought there and lost money often sell when it comes back, so expect a pause. A strong close above it on high volume would open the way higher.'));
+
+  // 3. Floor
+  if(sup){var dd=pc(px,sup.v)>0?(px-sup.v)/px*100:0;
+    o.push(H('Floor (support): '+f0(sup.v)+', '+dd.toFixed(0)+'% below')+P('Buyers stepped in here'+(sup.n>1?' '+sup.n+' times':'')+' before. '+(dd>20?'<b>That is a long way down.</b> The stock rose without pausing, so if it falls there is no obvious level for buyers to defend until about '+f0(sup.v)+'.':dd<5?'It is close, so a stop just under it keeps the possible loss small.':'A drop below it would break the pattern of the last few months.')));
+  } else o.push(H('Floor (support): none found')+P('No clear level where buyers have stepped in during the last 6 months.'));
+
+  // 4. Pullback / bounce map
+  if(f&&f.lv){var lv=f.lv,a=lv['0.382'],b=lv['0.5'],c=lv['0.618'];
+    if(f.up){
+      var where=px>=lv['0.236']?'Right now it has <b>not pulled back at all</b>.':px>=a?'It has made a small, healthy pullback so far.':px>=c?'It is <b>in the normal pullback zone now</b> - watch whether buyers hold it here.':'It has already fallen <b>deeper than a normal pullback</b> - most of the rise is gone.';
+      o.push(H('Where a normal pullback would stop')+P('After a big run, stocks usually give back part of it before the next move. For this run:')+
+        '<p style="margin:0 0 2px">&bull; A <b>healthy pullback</b> would come back to about <b>'+f0(a)+' - '+f0(b)+'</b>'+(_num(px)?' ('+Math.min(pc(a,px),pc(b,px)).toFixed(0)+'-'+Math.max(pc(a,px),pc(b,px)).toFixed(0)+'% below today)':'')+'.</p>'+
+        '<p style="margin:0 0 4px">&bull; Falling below about <b>'+f0(c)+'</b> would mean most of the rise has been undone.</p>'+P(where));
+      if(nearTop&&sup&&(px-sup.v)/px>0.2)todo.push('Buying here means <b>no nearby safety net</b>: a normal pullback alone could take it '+Math.min(pc(a,px),pc(b,px)).toFixed(0)+'-'+Math.max(pc(a,px),pc(b,px)).toFixed(0)+'% lower.');
+      if(px>=a)todo.push('A patient approach: wait for a pullback that <b>holds around '+f0(b)+' - '+f0(a)+'</b> and turns back up, or for a tight sideways range to form, which creates a nearer floor.');
+      else if(px>=c)todo.push('It is in the zone where buyers usually return. Look for it to stop falling and turn up on rising volume before acting.');
+      else todo.push('The uptrend is in trouble. Wait for a new base to form rather than trying to catch the fall.');
+      todo.push('If you already own it, raise your stop as it climbs to protect the gain.');
+    } else {
+      o.push(H('How far could a bounce go?')+P('Bounces in a falling stock often stall around <b>'+f0(a)+' - '+f0(c)+'</b>. Getting back above about <b>'+f0(c)+'</b> would suggest a real turnaround, not just a bounce.')+
+        P(px>=c?'It is <b>already above that level</b>, which is encouraging.':px>=a?'It is <b>in that stall zone now</b>.':'It has not bounced far yet.'));
+      todo.push(px>=c?'The bounce is strong enough to take seriously. Watch whether it can hold above '+f0(c)+'.':'Until it gets back above '+f0(c)+', treat any rise as a bounce in a downtrend.');
+    }
   }
-  // RS line
-  if(t.rsS&&t.rsS.length){var last=t.rsS[t.rsS.length-1];
-    o.push('<b>RS line:</b> the stock divided by '+BENCH+', set to 100 sixty sessions ago. It reads '+last.toFixed(1)+', so the stock has '+(last>=100?'outperformed by '+(last-100).toFixed(0)+'%':'lagged by '+(100-last).toFixed(0)+'%')+' since then. A rising line means it is leading the market; Minervini wants it rising, ideally at new highs before price is.');}
-  return '<div class="mv"><div class="abox" style="margin-top:12px;padding:10px;line-height:1.5;font-size:10px;color:var(--muted)"><div style="font-weight:800;font-size:9px;color:var(--text);margin-bottom:5px;letter-spacing:.5px">READING THESE LEVELS</div>'+
-    o.map(function(x){return '<p style="margin:0 0 6px">'+x+'</p>';}).join('')+'</div></div>';
+
+  // 5. Next day
+  if(t.pivots){var p=t.pivots;
+    o.push(H('Tomorrow (pivot points)')+P(Math.abs(p.R1-p.S1)<1e-6?'All the pivot levels are the same ('+f0(p.P)+') because it traded at a single price all day. They mean nothing until it trades normally again.':'The key level for the next session is <b>'+f0(p.P)+'</b>. Staying above it is a small positive. First ceiling '+f0(p.R1)+', first floor '+f0(p.S1)+'. These matter mostly to day traders.'));
+  }
+
+  // 6. Practical
+  if(L.days>=2)todo.unshift('<b style="color:#ff4757">It is circuit-locked</b> (one price all day for '+L.days+' sessions). You generally cannot trade at the shown price, so none of the levels above can be used until it trades normally.');
+  else if(L.illiquid)todo.unshift('<b style="color:#ff9f43">It trades very thinly</b> (about '+LIQ_FMT(L.adv)+' a day), so a small order can move the price and getting out can be hard.');
+  if(big&&L.days<2&&!L.illiquid)todo.push('It more than '+(((f.hi-f.lo)/f.lo)>=1?'doubled':'jumped')+' in about 3 months. Runs that fast often swing hard both ways, so keep position size small.');
+  if(todo.length)o.push(H('What this means in practice')+todo.map(function(x){return '<p style="margin:0 0 3px">&bull; '+x+'</p>';}).join(''));
+
+  return '<div class="mv"><div class="abox" style="margin-top:12px;padding:10px;line-height:1.5;font-size:10px;color:var(--muted)"><div style="font-weight:800;font-size:9.5px;color:var(--text);letter-spacing:.5px">WHAT THE LEVELS MEAN</div>'+
+    o.join('')+'<p style="margin:6px 0 0;font-size:9px;color:#3d5a78">An explanation of the levels, not a recommendation to buy or sell.</p></div></div>';
 }
 function cardNote(name,e){
   // stock-specific one-liners for the filler cards
