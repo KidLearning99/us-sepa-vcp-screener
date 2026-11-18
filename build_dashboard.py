@@ -699,6 +699,110 @@ function ipoNote(r){
     '<span style="color:var(--muted)">Only <strong style="color:#e8f0fe">'+n+' sessions</strong> of history. The MA150 / MA200 checks need 150-200 sessions, so they read as not met until then and the SEPA score understates it. '+
     'Minervini judges new issues on their first base after listing instead: a tight, orderly consolidation that holds above the IPO-day low.'+(off?' It is '+off+'.':'')+'</span></div>';
 }
+var BENCH='the S&amp;P 500';
+function fullSummary(r,passed,testable){
+  var t=r.tech||{},e=t.ex||{},m=t.mas||{},G='#00d084',R='#ff4757',A='#ff9f43',B='#3b82f6',M='#5a7a9a';
+  var f2=function(v){return CUR+v.toFixed(2);},pc=function(v){return (v>=0?'+':'')+v.toFixed(1)+'%';};
+  var px=r.price,sec=[],pos=0,neg=0;
+  var add=function(ok,w){if(ok===true)pos+=(w||1);else if(ok===false)neg+=(w||1);};
+
+  // ── Trend and stage
+  var stg=r.stage||0,stName={1:'Stage 1 (basing / neglect)',2:'Stage 2 (advancing)',3:'Stage 3 (topping)',4:'Stage 4 (declining)'}[stg]||'an unclassified stage';
+  var maN=0,maUp=0;['ema10','ema21','sma20','sma50','sma100','sma200'].forEach(function(k){if(m[k]&&_num(m[k].d)){maN++;if(m[k].d>=0)maUp++;}});
+  var ma50dn=m.sma50&&_num(m.sma50.slope)&&m.sma50.slope<0, ma200up=m.sma200&&_num(m.sma200.slope)&&m.sma200.slope>0;
+  var stacked=_num(r.ma50)&&_num(r.ma150)&&_num(r.ma200)&&r.ma50>r.ma150&&r.ma150>r.ma200;
+  add(stg===2?true:null,2);add(stg===4?false:null,2);add(r.sepaScore>=6,2);if(r.sepaScore<=3)neg+=1;
+  var tr='It sits in <b>'+stName+'</b> with a trend-template score of <b>'+r.sepaScore+'/7</b>'+(testable?' and '+passed+' of '+testable+' testable SEPA legs met':'')+'. ';
+  if(maN)tr+='Price is above <b>'+maUp+' of '+maN+'</b> moving averages'+(stacked?' and the 50 / 150 / 200-day are stacked in uptrend order':' but the long averages are not yet stacked in uptrend order')+'. ';
+  if(ma50dn)tr+='The 50-day is still sloping down, so the intermediate trend has not turned. ';
+  else if(m.sma50&&_num(m.sma50.slope))tr+='The 50-day is rising. ';
+  if(ma200up)tr+='The 200-day is rising, so the long-term trend is up. ';
+  if(_num(e.lrSlope))tr+='Over 50 sessions the price has trended '+(e.lrSlope>=0?'up':'down')+' at about '+Math.abs(e.lrSlope).toFixed(0)+'% a year'+(_num(e.lrR2)?(e.lrR2>=0.7?', smoothly':e.lrR2<0.4?', in a choppy way':'')+'':'')+'. ';
+  if(_num(t.adx))tr+=(t.adx>=25?'ADX '+t.adx.toFixed(0)+' shows a strong trend'+(t.plusDI>=t.minusDI?' with buyers in control.':' with sellers in control.'):'ADX '+t.adx.toFixed(0)+' says there is no strong trend right now.');
+  add(maN?maUp/maN>=0.8:null);add(ma50dn?false:null);add(_num(t.adx)&&t.adx>=25?t.plusDI>=t.minusDI:null);
+  sec.push(['Trend &amp; stage',tr]);
+
+  // ── Momentum
+  var mo='';
+  if(_num(t.rsi))mo+='RSI '+t.rsi.toFixed(0)+(t.rsi>=70?' is overbought':t.rsi<=30?' is oversold':t.rsi>=50?' favours buyers':' favours sellers')+'. ';
+  if(_num(t.macdHist))mo+='MACD is '+(t.macdHist>0?'positive':'negative')+' and '+((t.macdHist>=(t.macdHistPrev||0))===(t.macdHist>0)?'strengthening':'fading')+(t.macdCross?' (crossed '+t.macdCross+')':'')+'. ';
+  var ob=[];if(_num(t.stochK)&&t.stochK>=80)ob.push('Stochastic '+t.stochK.toFixed(0));if(_num(t.willR)&&t.willR>-20)ob.push('Williams %R '+t.willR.toFixed(0));if(_num(t.bbPctB)&&t.bbPctB>=90)ob.push('Bollinger %B '+t.bbPctB.toFixed(0)+'%');
+  if(ob.length)mo+='Short-term it is stretched ('+ob.join(', ')+'), so a pause or pullback would be normal before any further move. ';
+  if(_num(t.roc20))mo+='The last 20 sessions returned '+pc(t.roc20)+'.';
+  add(_num(t.rsi)?t.rsi>=50:null);add(_num(t.macdHist)?t.macdHist>0:null);
+  if(mo)sec.push(['Momentum',mo]);
+
+  // ── Volume
+  var vo='',vPos=0,vNeg=0;
+  if(_num(r.accDistRatio)){vo+='Over 60 sessions up-day volume is <b>'+r.accDistRatio.toFixed(2)+'x</b> down-day volume'+(r.accDistRatio>=1.2?' - institutions are accumulating':r.accDistRatio>=1?' - slightly more buying than selling':' - more stock has changed hands on down days, a sign of distribution')+'. ';r.accDistRatio>=1?vPos++:vNeg++;}
+  if(_num(t.obvTrend)){vo+='On-balance volume is '+(t.obvTrend>0?'rising':'falling')+' over 20 days. ';t.obvTrend>0?vPos++:vNeg++;}
+  if(_num(t.mfi)){vo+='Money Flow Index '+t.mfi.toFixed(0)+(t.mfi>=50?' shows net inflow':' shows net outflow')+'. ';t.mfi>=50?vPos++:vNeg++;}
+  if(_num(e.cmf)){vo+='Chaikin Money Flow is '+(e.cmf>=0?'+':'')+e.cmf.toFixed(2)+'. ';e.cmf>=0?vPos++:vNeg++;}
+  if(vPos+vNeg)vo+='<b>'+(vPos>vNeg+1?'Volume confirms the price action.':vNeg>vPos+1?'Volume does not confirm the price action - the move lacks institutional backing.':'Volume is mixed, so the move is not fully confirmed.')+'</b>';
+  add(vPos+vNeg?vPos>vNeg:null,2);
+  if(vo)sec.push(['Volume &amp; money flow',vo]);
+
+  // ── Relative strength
+  var rs='';
+  if(_num(t.rs12m))rs+='Against '+BENCH+' it is '+pc(t.rs12m)+' over 12 months'+(_num(t.rs6m)?', '+pc(t.rs6m)+' over 6':'')+(_num(t.rs3m)?' and '+pc(t.rs3m)+' over 3':'')+'. ';
+  if(t.rsLineHigh)rs+='The relative-strength line is at a 52-week high - a leadership trait Minervini looks for, often ahead of price. ';
+  else if(_num(t.rs3m)&&_num(t.rs12m)&&t.rs3m<0&&t.rs12m>0)rs+='A long-term leader that has lagged recently; leadership needs to reassert itself. ';
+  if(_num(t.beta))rs+='Beta '+t.beta.toFixed(2)+(t.beta>1.3?' - it amplifies market moves.':t.beta<0.8?' - it moves less than the market and mostly on its own news.':'.');
+  add(_num(t.rs12m)?t.rs12m>0:null);add(_num(t.rs3m)?t.rs3m>0:null);if(t.rsLineHigh)pos++;
+  if(rs)sec.push(['Relative strength',rs]);
+
+  // ── Key levels
+  var res=(t.res||[])[0],sup=(t.sup||[])[0],lv='',trigger=null,floor=null;
+  var ceilings=[];if(res)ceilings.push(res.v);if(_num(t.donHi)&&t.donHi>px)ceilings.push(t.donHi);if(_num(t.sar)&&!t.sarBull&&t.sar>px)ceilings.push(t.sar);
+  var near=ceilings.filter(function(v){return (v-px)/px<=0.04;});
+  if(near.length)trigger=Math.max.apply(null,near);else if(ceilings.length)trigger=Math.min.apply(null,ceilings);
+  if(res)lv+='Nearest resistance '+f2(res.v)+' ('+pc((res.v-px)/px*100)+(res.n>1?', tested '+res.n+' times':'')+'). ';
+  else lv+='There is no swing resistance overhead in six months - clear air above. ';
+  if(sup){lv+='Nearest support '+f2(sup.v)+' ('+pc((sup.v-px)/px*100)+(sup.n>1?', tested '+sup.n+' times':'')+'). ';floor=sup.v;}
+  if(_num(t.donHi))lv+='The 20-day range is '+f2(t.donLo)+' to '+f2(t.donHi)+(t.donBreak==='up'?' and price just broke above it':'')+'. ';
+  if(t.fib){var fk=null;['0.236','0.382','0.5','0.618','0.786'].forEach(function(k){var v=t.fib.lv[k];if(_num(v)&&Math.abs(v-px)/px<0.015)fk=k;});if(fk)lv+='Price is sitting on the '+(parseFloat(fk)*100).toFixed(1)+'% Fibonacci level of the 60-day '+(t.fib.up?'rise':'fall')+'. ';}
+  if(near.length>=2)lv+='<b>Several ceilings cluster within 4% above ('+near.map(f2).join(', ')+'), making that zone the key hurdle.</b>';
+  sec.push(['Key levels',lv]);
+
+  // ── Risk
+  var rk='';
+  if(_num(t.atrPct))rk+='A typical day moves '+t.atrPct.toFixed(1)+'% ('+f2(t.atr)+'). ';
+  if(_num(t.hv20)&&_num(t.hv60))rk+='Volatility is '+(t.hv20<t.hv60*0.8?'contracting - a constructive sign in a base':t.hv20>t.hv60*1.2?'expanding - wider swings than usual':'steady')+' ('+t.hv20.toFixed(0)+'% vs '+t.hv60.toFixed(0)+'% annualised). ';
+  if(_num(r.ma50)&&r.ma50<px)rk+='A stop under the 50-day ('+f2(r.ma50)+') risks '+((px-r.ma50)/px*100).toFixed(1)+'%'+((px-r.ma50)/px*100>8?', wider than the 7-8% rule allows':'')+'. ';
+  else if(_num(r.ma50))rk+='Price is below the 50-day, so there is no natural stop under it. ';
+  if(_num(t.maxDD))rk+='Its worst fall in the past year was '+t.maxDD.toFixed(1)+'%.';
+  if(rk)sec.push(['Risk',rk]);
+
+  // ── Verdict
+  var score=pos/(pos+neg||1),st=r.status;
+  var vd,vc;
+  if(stg===2&&score>=0.65&&(st==='breakout'||st==='near-pivot')&&vPos>=vNeg){vd=st==='breakout'?'ACTIONABLE BREAKOUT':'SETUP NEAR PIVOT';vc=G;}
+  else if(stg===4||score<0.35){vd='AVOID - DOWNTREND';vc=R;}
+  else if(stg===2||score>=0.6){vd='CONSTRUCTIVE - ON WATCH';vc=B;}
+  else if(ma50dn&&_num(t.macdHist)&&t.macdHist>0){vd='BOUNCE, NOT YET A TREND';vc=A;}
+  else {vd='MIXED - NO EDGE';vc=A;}
+
+  // ── What to watch
+  var wt='';
+  if(vd==='ACTIONABLE BREAKOUT')wt='Follow-through above '+(trigger?f2(trigger):'the pivot')+' on above-average volume keeps it valid. A close back inside the base, or below the 50-day, says the breakout failed.';
+  else if(trigger)wt='Bullish trigger: a close above <b>'+f2(trigger)+'</b> on volume at least 1.5x average'+(vNeg>vPos?' - which would also fix the weak volume picture':'')+'. '+(floor?'If it turns down instead, the first area for buyers is around <b>'+f2(floor)+'</b>'+(_num(r.ma50)&&r.ma50<px&&r.ma50>floor?' (the 50-day at '+f2(r.ma50)+' comes first)':'')+'.':'');
+  else wt='No nearby trigger level - wait for a base to form.';
+  var trendOK=stacked&&ma200up&&_num(r.ma200)&&px>r.ma200;
+  if(stg!==2&&trendOK&&_num(r.accDistRatio)&&r.accDistRatio<1)wt+=' The price structure already meets Stage 2 (above a rising 200-day, averages stacked), but the stage model also needs up-day volume to beat down-day volume over 60 sessions - here it is '+r.accDistRatio.toFixed(2)+'x - so it stays out of Stage 2 until buyers show up in volume.';
+  else if(stg!==2&&trendOK)wt+=' The price structure meets Stage 2, but the stage model is not yet convinced the advance is established - recheck after the next base.';
+  else if(stg!==2)wt+=' For a SEPA entry it still needs to reach Stage 2: price above a rising 150- and 200-day with the 50-day above both, and up-day volume beating down-day volume.';
+  if(r.ipo)wt+=' As a recent listing, judge it on its first orderly base rather than the 200-day rules.';
+
+  var h='<div style=\"font-size:10px;color:var(--muted);line-height:1.55;padding:10px 12px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);border-left:3px solid '+vc+'\">'+
+    '<div style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:6px\"><strong style=\"color:#fff;font-size:10.5px;letter-spacing:.5px\">FULL READ</strong>'+
+    '<span style=\"font-size:9px;font-weight:800;color:'+vc+';border:1px solid '+vc+'66;background:'+vc+'14;border-radius:3px;padding:1px 6px\">'+vd+'</span></div>'+
+    '<div style=\"display:flex;height:5px;border-radius:3px;overflow:hidden;background:#1e2d45;margin-bottom:3px\"><div style=\"width:'+(score*100).toFixed(0)+'%;background:'+G+'\"></div><div style=\"flex:1;background:'+R+'\"></div></div>'+
+    '<div style=\"font-size:9px;margin-bottom:8px\"><span style=\"color:'+G+'\">'+pos+' bullish</span> / <span style=\"color:'+R+'\">'+neg+' bearish</span> weighted signals across SEPA, trend, momentum, volume and relative strength</div>';
+  sec.forEach(function(s){h+='<p style=\"margin:0 0 7px\"><strong style=\"color:var(--text)\">'+s[0]+'. </strong>'+s[1]+'</p>';});
+  h+='<p style=\"margin:0 0 7px;padding-top:6px;border-top:1px solid var(--border)\"><strong style=\"color:'+vc+'\">What to watch. </strong>'+wt+'</p>';
+  h+='<p style=\"margin:0;font-size:9px;color:#3d5a78\">The SEPA method buys strength already in motion and depends on cutting failures quickly; it assumes a trending broad market. Catalysts and the market backdrop are yours to judge. Not financial advice.</p></div>';
+  return h;
+}
 function fillFund(r){
   var out='<div class="mv">';
   // Key stats
@@ -1382,10 +1486,7 @@ function det(r){
       : passed+' of the '+testable+' testable legs hold. Minervini treats these as cumulative rather than a majority vote - a strong chart does not compensate for a weak business, and neither compensates for a wide stop.';
     return '<div style=\"margin-top:14px\"><div class=\"dh\">SEPA Scorecard &#8212; '+passed+'/'+testable+' testable legs</div>'+
       rows+
-      '<div style=\"font-size:9.5px;color:var(--muted);line-height:1.5;padding:7px 10px;background:var(--bg3);border-radius:5px;border:1px solid var(--border)\">'+
-      '<strong style=\"color:var(--text)\">Read together: </strong>'+verdict+
-      ' The method is momentum, not value: it buys strength already in motion and depends on cutting the failures quickly. It also assumes a trending broad market - in a choppy one, breakouts fail in a run and the rules stop working.'+
-      '</div></div>';
+      fullSummary(r,passed,testable)+'</div>';
   })();
 
   var chartCol=\'<div style=\"display:flex;flex-direction:column;gap:12px\">\'+
