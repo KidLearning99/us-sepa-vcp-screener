@@ -1,5 +1,320 @@
 {
   "about": "Analyst ratings found by web research for stocks that Yahoo Finance does not cover. Maintained by a weekly scheduled task; read by build_dashboard.py. n = number of analysts found (0 = searched, none found). rating: strong_buy | buy | hold | underperform | sell | null. checked = date researched; asOf = date of the newest analyst view found.",
   "updated": "2026-11-19",
-  "stocks": {}
+  "stocks": {
+    "CHT": {
+      "checked": "2026-11-19",
+      "n": 6,
+      "rating": "hold",
+      "tMean": 41.45,
+      "tLow": 35.83,
+      "tHigh": 45.55,
+      "asOf": "2026-09",
+      "note": "No US-listed ADR targets found; these are converted from local Taiwan-share targets (avg NT$136.5, range NT$118-150, all six analysts at Hold) at 10 shares per ADR and about 32.93 TWD per USD. Local consensus sits well below the current price.",
+      "sources": [
+        {
+          "name": "StockAnalysis (TPE:2412)",
+          "url": "https://stockanalysis.com/quote/tpe/2412/forecast/"
+        },
+        {
+          "name": "Alpha Spread",
+          "url": "https://www.alphaspread.com/security/twse/2412/analyst-estimates"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/stocks/NYSE/CHT/forecast/"
+        },
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/cht/forecast"
+        }
+      ]
+    },
+    "PAG": {
+      "checked": "2026-11-19",
+      "n": 10,
+      "rating": "buy",
+      "tMean": 208.29,
+      "tLow": 190,
+      "tHigh": 238,
+      "asOf": "2026-10",
+      "brokers": "Barclays, JPMorgan, Stephens, Citi, UBS, BofA, Morgan Stanley",
+      "note": "MarketBeat shows a Moderate Buy with an even 5 Buy / 5 Hold split; TipRanks' 3-month view leans Hold. The average target sits slightly below the current price.",
+      "sources": [
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/stocks/NYSE/PAG/forecast/"
+        },
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/PAG/forecast"
+        }
+      ]
+    },
+    "AXTA": {
+      "checked": "2026-11-19",
+      "n": 18,
+      "rating": "hold",
+      "tMean": 38.82,
+      "tLow": 33,
+      "tHigh": 46,
+      "asOf": "2026-11",
+      "brokers": "RBC, Wells Fargo, JPMorgan, Barclays, BofA, KeyBanc, Goldman Sachs",
+      "note": "Views are split: 10 of 18 analysts rate it Hold, and MarketBeat labels the consensus Hold, while S&P and TipRanks lean Buy. After Q3 the targets cluster in the mid-$30s to mid-$40s.",
+      "sources": [
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/axta/forecast/"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/stocks/NYSE/AXTA/forecast/"
+        },
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/axta/forecast"
+        }
+      ]
+    },
+    "BRZE": {
+      "checked": "2026-11-19",
+      "n": 21,
+      "rating": "hold",
+      "tMean": 45.89,
+      "tLow": 34,
+      "tHigh": 48,
+      "asOf": "2026-10",
+      "brokers": "Wells Fargo, Barclays, Citi, TD Cowen, Stifel, Cantor, Canaccord, Loop",
+      "note": "Salesforce agreed to buy Braze for $47.50 a share in cash. Nearly every analyst then cut to Hold and set targets at or near the deal price.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/brze/forecast"
+        },
+        {
+          "name": "Braze press release",
+          "url": "https://www.braze.com/press-releases/salesforce-signs-definitive-agreement-to-acquire-braze"
+        }
+      ]
+    },
+    "CROX": {
+      "checked": "2026-11-19",
+      "n": 15,
+      "rating": "buy",
+      "tMean": 164.67,
+      "tLow": 128,
+      "tHigh": 190,
+      "asOf": "2026-10",
+      "brokers": "Needham, Barclays, Baird, Piper Sandler, UBS, Stifel, Goldman Sachs, Williams Trading",
+      "note": "Targets went up sharply after the strong Q3 beat in late October (Needham to $190; Goldman, the only Sell, to $128). The stock now trades at roughly the average target; TipRanks shows a more mixed Buy/Hold split.",
+      "sources": [
+        {
+          "name": "Investing.com",
+          "url": "https://www.investing.com/equities/crocs-consensus-estimates"
+        },
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/CROX/forecast"
+        },
+        {
+          "name": "KoalaGains",
+          "url": "https://koalagains.com/daily-top-movers/top-gainers/details/47f61b66-0cc6-4cf6-bfd7-bcf0a4f8bc03"
+        }
+      ]
+    },
+    "GSAT": {
+      "checked": "2026-11-19",
+      "n": 2,
+      "rating": "hold",
+      "tMean": 90,
+      "tLow": 90,
+      "tHigh": 90,
+      "asOf": "2026-08",
+      "brokers": "Craig-Hallum, B. Riley",
+      "note": "Amazon agreed in April 2026 to buy Globalstar for $90 a share, and both post-deal targets equal that price. Older pre-deal targets (Deutsche Bank $62, Clear Street $71) drag MarketBeat's average down to about $75.67.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/gsat/forecast"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/stocks/NASDAQ/GSAT/forecast/"
+        },
+        {
+          "name": "Bloomberg",
+          "url": "https://www.bloomberg.com/news/articles/2026-04-14/amazon-to-buy-satellite-operator-globalstar-for-90-a-share-in-cash-or-stock"
+        }
+      ]
+    },
+    "LLYVA": {
+      "checked": "2026-11-19",
+      "n": 0,
+      "rating": null,
+      "tMean": null,
+      "tLow": null,
+      "tHigh": null,
+      "asOf": null,
+      "note": "No current broker coverage found for Liberty Live. The only broker views are Seaport's Buy calls from 2023-2024, which are too old to count; Zacks and Weiss quant ratings are excluded.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/llyva/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/llyva/forecast/"
+        },
+        {
+          "name": "PriceTargets.com",
+          "url": "https://www.pricetargets.com/NASDAQ/LLYVK"
+        }
+      ]
+    },
+    "RLI": {
+      "checked": "2026-11-19",
+      "n": 4,
+      "rating": "hold",
+      "tMean": 60,
+      "tLow": 53,
+      "tHigh": 74,
+      "asOf": "2026-10",
+      "brokers": "Wells Fargo, KBW, Jefferies, Truist",
+      "note": "Coverage is cautious, with two Sells (Wells Fargo, Jefferies), Holds and one Buy (KBW). Most targets sit below the current price.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/rli/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/rli/forecast/"
+        }
+      ]
+    },
+    "RUSHB": {
+      "checked": "2026-11-19",
+      "n": 4,
+      "rating": "buy",
+      "tMean": 54,
+      "tLow": 51,
+      "tHigh": 55,
+      "asOf": "2026-10",
+      "brokers": "Stephens, BofA, UBS",
+      "note": "These targets are from Rush Enterprises coverage, which is published on the Class A shares (about $46.6) and is post-split. RUSHB trades well above Class A, so the targets look low against the RUSHB price. Investing.com labels the consensus Strong Buy and TipRanks Moderate Buy.",
+      "sources": [
+        {
+          "name": "Investing.com (RUSHA)",
+          "url": "https://ca.investing.com/equities/rush-enterprises-(a)-consensus-estimates"
+        },
+        {
+          "name": "TipRanks (RUSHA)",
+          "url": "https://www.tipranks.com/stocks/rusha/forecast"
+        },
+        {
+          "name": "Walnut Invest (RUSHB price)",
+          "url": "https://walnutinvest.com/stocks/rushb"
+        }
+      ]
+    },
+    "VLTO": {
+      "checked": "2026-11-19",
+      "n": 8,
+      "rating": "buy",
+      "tMean": 125.38,
+      "tLow": 120,
+      "tHigh": 132,
+      "asOf": "2026-11",
+      "brokers": "BMO, Stifel, Barclays, Citi, Baird, UBS, RBC",
+      "note": "Analysts raised targets across the board after the early-November results. The split is even at 4 Buy / 4 Hold, and TipRanks calls it a Moderate Buy.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/vlto/forecast"
+        }
+      ]
+    },
+    "COKE": {
+      "checked": "2026-11-19",
+      "n": 0,
+      "rating": null,
+      "tMean": null,
+      "tLow": null,
+      "tHigh": null,
+      "asOf": null,
+      "note": "No current sell-side ratings or price targets found for Coca-Cola Consolidated; the only entries on TipRanks are AI-model ratings, which are excluded.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/coke/forecast"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/stocks/NASDAQ/COKE/price-target"
+        }
+      ]
+    },
+    "IBN": {
+      "checked": "2026-11-19",
+      "n": 41,
+      "rating": "strong_buy",
+      "tMean": 37.92,
+      "tLow": 34.07,
+      "tHigh": 42.8,
+      "asOf": "2026-10",
+      "note": "Converted from local NSE targets (Trendlyne average Rs1,772; S&P range Rs1,592-2,000, last updated July) at 2 shares per ADR and about 93.47 INR per USD. Almost all of the roughly 41 local analysts rate it Buy or Strong Buy.",
+      "sources": [
+        {
+          "name": "Trendlyne",
+          "url": "https://trendlyne.com/equity/consensus-estimates/584/ICICIBANK/icici-bank-ltd"
+        },
+        {
+          "name": "StockAnalysis (NSE)",
+          "url": "https://stockanalysis.com/quote/nse/ICICIBANK/forecast/"
+        },
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/ibn/forecast"
+        }
+      ]
+    },
+    "PBA": {
+      "checked": "2026-11-19",
+      "n": 8,
+      "rating": "buy",
+      "tMean": 52.16,
+      "tLow": 48.85,
+      "tHigh": 55.83,
+      "asOf": "2026-11",
+      "brokers": "TD Cowen, Jefferies, ATB Cormark, RBC, CIBC, Raymond James, JPMorgan, Barclays",
+      "note": "Targets are set in CAD (about C$74.75 average, C$70-80 range over the past 3 months). I converted them to USD at about 0.698 USD per CAD. MarketBeat's broader 12-month TSX average is lower, at C$69.29.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/pba/forecast"
+        },
+        {
+          "name": "MarketBeat (TSX:PPL)",
+          "url": "https://www.marketbeat.com/stocks/TSE/PPL/forecast/"
+        }
+      ]
+    },
+    "UNP": {
+      "checked": "2026-11-19",
+      "n": 14,
+      "rating": "strong_buy",
+      "tMean": 335.67,
+      "tLow": 310,
+      "tHigh": 350,
+      "asOf": "2026-11",
+      "brokers": "Wells Fargo, Bernstein, BofA, Baird, Susquehanna, Barclays, Citi, JPMorgan, TD Cowen, UBS",
+      "note": "TipRanks labels the consensus Strong Buy (11 Buy, 3 Hold). Baird cut to Hold in early November with a $310 target.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/unp/forecast"
+        }
+      ]
+    }
+  }
 }
