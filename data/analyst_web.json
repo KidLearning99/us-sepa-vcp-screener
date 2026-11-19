@@ -1,0 +1,5 @@
+{
+  "about": "Analyst ratings found by web research for stocks that Yahoo Finance does not cover. Maintained by a weekly scheduled task; read by build_dashboard.py. n = number of analysts found (0 = searched, none found). rating: strong_buy | buy | hold | underperform | sell | null. checked = date researched; asOf = date of the newest analyst view found.",
+  "updated": "2026-11-19",
+  "stocks": {}
+}

@@ -43,6 +43,21 @@ def build(data, source="Yahoo Finance (live)", min_cap=5_000_000_000, meta=None)
     data = [_clean(r) for r in data]
     for r in data:  # drop any candle with a missing value so charts/maths never see null
         r["ohlcv"] = [c for c in (r.get("ohlcv") or []) if all(v is not None for v in c)]
+    # Analyst ratings found by the weekly web-research task, for stocks Yahoo does not cover
+    try:
+        import os
+        _wp = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "analyst_web.json")
+        with open(_wp, encoding="utf-8") as _fh:
+            _web = (json.load(_fh) or {}).get("stocks", {}) or {}
+        _web = {str(k).upper(): v for k, v in _web.items()}
+        for r in data:
+            w = _web.get(str(r.get("ticker", "")).upper())
+            if w and not r.get("analyst"):
+                r["analystWeb"] = w
+    except FileNotFoundError:
+        pass
+    except Exception as _e:
+        print(f"analyst_web.json ignored: {type(_e).__name__}: {_e}")
     json_data = json.dumps(data, default=_jsafe)
 
     n        = len(data)
@@ -967,39 +982,58 @@ function decisionHTML(r){
     '<div style="display:flex;flex-wrap:wrap;gap:6px">'+gHTML+'</div></div>';
 
   // ── 2. WHAT ANALYSTS SAY about this stock ──
-  var an=r.analyst,anHTML,sym=YSYM(r);
+  var an=r.analyst,aw=r.analystWeb,anHTML,sym=YSYM(r);
   var links='<div style="font-size:9.5px;margin-top:4px">Check other sources: '+
     '<a href="https://finance.yahoo.com/quote/'+encodeURIComponent(sym)+'/analysis" target="_blank" rel="noopener" style="color:#3b82f6">Yahoo Finance</a> &middot; '+
     '<a href="https://www.marketscreener.com/search/?q='+encodeURIComponent(r.name||r.ticker)+'" target="_blank" rel="noopener" style="color:#3b82f6">MarketScreener</a></div>';
-  if(an&&an.n){
-    var KEY={strong_buy:['Strong Buy',G,'think it will do much better than the market'],buy:['Buy',G,'think it will do better than the market'],hold:['Hold',AM,'think it will do about the same as the market'],underperform:['Underperform',RD,'think it will do worse than the market'],sell:['Sell',RD,'think it will do much worse than the market']};
-    var k=KEY[an.key]||[an.key,AM,'have a mixed view'],px=d.price,up=_num(an.tMean)&&_num(px)?(an.tMean/px-1)*100:null;
-    var bullAn=an.key==='buy'||an.key==='strong_buy',bearAn=an.key==='underperform'||an.key==='sell';
+  var KEY={strong_buy:['Strong Buy',G,'think it will do much better than the market'],buy:['Buy',G,'think it will do better than the market'],hold:['Hold',AM,'think it will do about the same as the market'],underperform:['Underperform',RD,'think it will do worse than the market'],sell:['Sell',RD,'think it will do much worse than the market']};
+  var monthsOld=function(s){if(!s)return null;var p=String(s).split('-'),dt=new Date(+p[0],(+p[1]||1)-1,+p[2]||1);return isNaN(dt)?null:(Date.now()-dt.getTime())/2.63e9;};
+  var anBody=function(x,nameSrc){
+    var k=KEY[x.key]||[x.key||'Not stated',AM,'have not given a clear rating'],px=d.price,up=_num(x.tMean)&&_num(px)?(x.tMean/px-1)*100:null;
+    var bullAn=x.key==='buy'||x.key==='strong_buy',bearAn=x.key==='underperform'||x.key==='sell';
     var ruleBuy=d.action==='BUY'||d.action==='ALERT',ruleNo=d.action==='AVOID'||d.action==='SELL';
     var lines=[];
-    lines.push('<b>'+an.n+' analyst'+(an.n>1?'s':'')+'</b> '+(an.n>1?'cover':'covers')+' this stock. On average they rate it <b style="color:'+k[1]+'">'+k[0]+'</b>, meaning they '+k[2]+' over the next 12 months.');
-    if(up!==null)lines.push(up>=0?'Their average price target is <b>'+_px(an.tMean)+'</b>, about <b style="color:'+G+'">'+up.toFixed(0)+'% above</b> today&#39;s price.':
-      'Their average price target is <b>'+_px(an.tMean)+'</b>, about <b style="color:'+RD+'">'+Math.abs(up).toFixed(0)+'% below</b> today&#39;s price.');
-    lines.push(ruleBuy&&bullAn&&up!==null&&up<0?'<span style="color:'+AM+'">The analysts and the chart both like it, but the price is already above the analysts&#39; target, so they see little room left to rise.</span>':
+    lines.push('<b>'+x.n+' analyst'+(x.n>1?'s':'')+'</b> '+(x.n>1?'cover':'covers')+' this stock.'+(x.key?' On average they rate it <b style="color:'+k[1]+'">'+k[0]+'</b>, meaning they '+k[2]+' over the next 12 months.':''));
+    if(up!==null)lines.push(up>=0?'Their average price target is <b>'+_px(x.tMean)+'</b>, about <b style="color:'+G+'">'+up.toFixed(0)+'% above</b> today&#39;s price.':
+      'Their average price target is <b>'+_px(x.tMean)+'</b>, about <b style="color:'+RD+'">'+Math.abs(up).toFixed(0)+'% below</b> today&#39;s price.');
+    if(x.key)lines.push(ruleBuy&&bullAn&&up!==null&&up<0?'<span style="color:'+AM+'">The analysts and the chart both like it, but the price is already above the analysts&#39; target, so they see little room left to rise.</span>':
       ruleBuy&&bullAn?'<span style="color:'+G+'">&#10003; The analysts and the chart both look positive.</span>':
       ruleBuy&&bearAn?'<span style="color:'+RD+'">&#9888; The chart looks good, but the analysts do not. When they disagree, be extra careful.</span>':
       ruleBuy?'<span style="color:'+AM+'">The analysts are neutral, so the reason to buy comes from the chart only.</span>':
       ruleNo&&bullAn?'<span style="color:'+AM+'">The analysts like the company, but the chart says this is not the time to buy.</span>':
       ruleNo&&bearAn?'<span style="color:'+RD+'">The analysts and the chart are both negative.</span>':
       'The chart says wait, so there is nothing to act on yet whatever the analysts think.');
-    if(an.n<3)lines.push('With only '+an.n+' analyst'+(an.n>1?'s':'')+', do not give this much weight.');
-    anHTML=head('WHAT ANALYSTS SAY &middot; THIS STOCK')+
-      '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:5px">'+
-        cell('Analyst rating',k[0],an.n+' analyst'+(an.n>1?'s':''),k[1])+
-        (_num(an.tMean)?cell('Average target',_px(an.tMean),up!==null?(up>=0?'+':'')+up.toFixed(0)+'% from today':'',up!==null&&up<0?RD:G):'')+
-        (_num(an.tLow)&&_num(an.tHigh)&&an.tLow!==an.tHigh?cell('Lowest - highest target',_px(an.tLow)+' - '+_px(an.tHigh)):'')+
-      '</div>'+
-      '<div style="font-size:10px;line-height:1.55;color:#c9d6e8">'+lines.map(function(x){return '<div>'+x+'</div>';}).join('')+'</div>'+
+    if(x.n<3)lines.push('With only '+x.n+' analyst'+(x.n>1?'s':'')+', do not give this much weight.');
+    return '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:5px">'+
+        cell('Analyst rating',x.key?k[0]:'-',x.n+' analyst'+(x.n>1?'s':''),k[1])+
+        (_num(x.tMean)?cell('Average target',_px(x.tMean),up!==null?(up>=0?'+':'')+up.toFixed(0)+'% from today':'',up!==null&&up<0?RD:G):'')+
+        (_num(x.tLow)&&_num(x.tHigh)&&x.tLow!==x.tHigh?cell('Lowest - highest target',_px(x.tLow)+' - '+_px(x.tHigh)):'')+
+      '</div><div style="font-size:10px;line-height:1.55;color:#c9d6e8">'+lines.map(function(l){return '<div>'+l+'</div>';}).join('')+'</div>';
+  };
+  if(an&&an.n){
+    anHTML=head('WHAT ANALYSTS SAY &middot; THIS STOCK')+anBody(an)+
       '<div style="font-size:9px;color:#5a7a9a;margin-top:3px">Analysts judge the company over 12 months. The chart rules above decide when to buy. Source: Yahoo Finance.</div>'+links;
+  } else if(aw){
+    var srcs=(aw.sources||[]).filter(function(s){return s&&/^https?:[/][/]/.test(s.url||'');}).map(function(s){return '<a href="'+encodeURI(s.url)+'" target="_blank" rel="noopener" style="color:#3b82f6">'+String(s.name||'source').replace(/</g,'&lt;')+'</a>';}).join(' &middot; ');
+    var chkOld=monthsOld(aw.checked),viewOld=monthsOld(aw.asOf);
+    var when='Checked '+(aw.checked||'-')+(chkOld!==null&&chkOld>1.5?' <b style="color:'+AM+'">(over a month ago, may be out of date)</b>':'');
+    var body;
+    if(aw.n>0){
+      body=anBody({n:aw.n,key:aw.rating,tMean:aw.tMean,tLow:aw.tLow,tHigh:aw.tHigh})+
+        '<div style="font-size:10px;line-height:1.55;color:#c9d6e8">'+
+        (aw.brokers?'<div>Covered by: '+String(aw.brokers).replace(/</g,'&lt;')+'.</div>':'')+
+        (viewOld!==null&&viewOld>6?'<div style="color:'+AM+'">The newest analyst view found is from '+aw.asOf+', so it may be out of date.</div>':'')+
+        (aw.note?'<div>'+String(aw.note).replace(/</g,'&lt;')+'</div>':'')+'</div>';
+    } else {
+      body='<div style="font-size:10px;line-height:1.55;color:#c9d6e8">No analyst currently covers this stock. Yahoo Finance had no ratings, so other websites were searched as well, and none of them showed a current broker rating or price target. This is normal for smaller companies and is not a bad sign. The rating above is based on the chart only.'+
+        (aw.note?'<div style="margin-top:2px">'+String(aw.note).replace(/</g,'&lt;')+'</div>':'')+'</div>';
+    }
+    anHTML=head('WHAT ANALYSTS SAY &middot; THIS STOCK &middot; FROM WEB RESEARCH')+body+
+      '<div style="font-size:9px;color:#5a7a9a;margin-top:3px">'+when+'. Found by searching broker and research sites because Yahoo Finance has no ratings for this stock.'+(srcs?' Sources: '+srcs:'')+'</div>'+links;
   } else if(r.analystChecked===false){
     anHTML=head('WHAT ANALYSTS SAY &middot; THIS STOCK')+'<div style="font-size:10px;line-height:1.55;color:#c9d6e8">Analyst data could not be loaded for this stock today, because Yahoo Finance was busy. It will try again at the next update.</div>'+links;
   } else {
-    anHTML=head('WHAT ANALYSTS SAY &middot; THIS STOCK')+'<div style="font-size:10px;line-height:1.55;color:#c9d6e8">No analyst ratings were found on Yahoo Finance. Few analysts follow smaller companies, so this is normal and is not a bad sign. The rating above is based on the chart only.</div>'+links;
+    anHTML=head('WHAT ANALYSTS SAY &middot; THIS STOCK')+'<div style="font-size:10px;line-height:1.55;color:#c9d6e8">No analyst ratings were found on Yahoo Finance. Few analysts follow smaller companies, so this is normal and is not a bad sign. The rating above is based on the chart only. If this stock becomes a BUY or SET ALERT, the weekly research will look for analyst views on other websites.</div>'+links;
   }
 
   // ── 3. Other signals on this stock ──
