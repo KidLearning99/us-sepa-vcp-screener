@@ -924,7 +924,7 @@ def fetch_all():
             adv = float((tail["Close"] * tail["Volume"]).mean()) if len(tail) else 0
             last2 = hist.tail(2)
             locked = bool(len(last2) == 2 and ((last2["High"] == last2["Low"]) & (last2["Low"] == last2["Close"])).all())
-            r["decision"] = decision.decide(hist, SPY_CLOSE, market, liquid=adv >= MIN_ADV, locked=locked)
+            r["decision"] = decision.decide(hist, SPY_CLOSE, market, liquid=adv >= MIN_ADV, locked=locked, row=r)
             r["patterns"] = decision.candle_patterns(hist)
             r["ichimoku"] = decision.ichimoku(hist)
         except Exception as e:

@@ -955,11 +955,12 @@ function decisionHTML(r){
   if(d.action==='SELL')prices=cell('Last price',_px(d.price))+cell('50-day avg',_px(d.ma50),'broken on volume',RD);
   else if(_num(d.entry)){
     var rr=_num(d.t1)&&_num(d.stop)?(d.t1-d.entry)/(d.entry-d.stop):null;
-    prices=cell(d.action==='BUY'?'Entry (today&#39;s close)':'Buy only above',_px(d.entry),d.action==='BUY'?'':'pivot '+_px(d.pivot),col)+
+    prices=cell(d.action==='BUY'?'Entry (today&#39;s close)':d.heldBack?'Breakout price (not a buy)':'Buy only above',_px(d.entry),d.action==='BUY'||d.heldBack?'':'pivot '+_px(d.pivot),col)+
       cell('Stop-loss',_px(d.stop),'-'+d.riskPct+'% risk',RD)+
       cell('Target 1',_px(d.t1),'+20% - sell part',G)+
       cell('Target 2',_px(d.t2),'3x the risk',G)+
-      (rr?cell('Reward : risk',rr.toFixed(1)+' : 1','to target 1'):'');
+      (rr?cell('Reward : risk',rr.toFixed(1)+' : 1','to target 1'):'')+
+      (d.action==='BUY'&&d.size?cell('Position size',d.size.toUpperCase(),d.size==='full'?'normal size':d.size==='half'?'half your normal size':'a quarter of normal',d.size==='full'?G:AM):'');
   }
 
   // ── 1. WHY THIS RATING: this stock's own numbers, test by test ──
@@ -974,12 +975,28 @@ function decisionHTML(r){
       '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px"><span style="font-size:10px;font-weight:800;color:var(--text)">'+g.t+'</span>'+
       '<span style="font-size:9px;font-weight:800;color:'+(all?G:RD)+'">'+ok+'/'+g.xs.length+(all?' PASS':' FAIL')+'</span></div>'+
       '<div style="font-size:8.5px;color:var(--muted);margin:-3px 0 5px">'+g.need+'</div>'+g.xs.map(item).join('')+'</div>';}).join('');
-  var verdict=!failed.length?'Every test passes at today&#39;s close, so the rules call it a <b style="color:'+G+'">BUY</b>.':
+  var verdict=!failed.length?(d.action==='BUY'?'Every test passes at today&#39;s close, so the rules call it a <b style="color:'+G+'">BUY</b>'+(d.size?' at <b>'+d.size+' size</b>':'')+'.':
+    'The price tests all pass, but the SEPA scorecard below holds it back, so it is rated <b style="color:'+col+'">'+a[0]+'</b>.'):
     'A BUY needs every group to pass. Not passing: <b style="color:'+col+'">'+failed.join(', ')+'</b>, so it is rated <b style="color:'+col+'">'+a[0]+'</b>.';
   var why='<div style="margin-top:10px;padding-top:8px;border-top:1px solid '+col+'33">'+
     head('WHY IT IS RATED '+a[0]+' &middot; THIS STOCK&#39;S OWN NUMBERS')+
     '<div style="font-size:10px;color:#c9d6e8;margin-bottom:6px">'+verdict+'</div>'+
     '<div style="display:flex;flex-wrap:wrap;gap:6px">'+gHTML+'</div></div>';
+  var qq=d.quality,qHTML='';
+  if(qq&&qq.legs){
+    var SC={pass:[G,'&#10003;','met'],partial:[AM,'&#9679;','partial'],fail:[RD,'&#10007;','not met'],manual:['#5a7a9a','?','check yourself']};
+    var legRow=function(l){var s=SC[l.state]||SC.manual;return '<div style="font-size:10px;line-height:1.35;margin-bottom:3px"><span style="color:'+s[0]+';font-weight:800;margin-right:4px">'+s[1]+'</span><b style="color:#c9d6e8">'+l.title+'</b> <span style="color:'+s[0]+';font-size:9px">'+s[2]+'</span><div style="font-size:9px;color:#6f88a5;margin-left:13px;font-family:JetBrains Mono">'+l.headline+'</div></div>';};
+    var sz=qq.sizeChecks||[],cx=qq.context||[],cxOk=cx.filter(function(x){return x.ok;}).length,szOk=sz.every(function(x){return x.ok;});
+    var box=function(t,need,body,bc){return '<div style="flex:1;min-width:220px;background:#0a1120;border:1px solid '+bc+'44;border-radius:6px;padding:7px 9px"><div style="font-size:10px;font-weight:800;color:var(--text);margin-bottom:2px">'+t+'</div><div style="font-size:8.5px;color:var(--muted);margin-bottom:5px">'+need+'</div>'+body+'</div>';};
+    var btf=(bt&&bt.full)||{},bth=(bt&&bt.half)||{};
+    var szNote=btf.n&&bth.n?'<div style="font-size:8.5px;color:#5a7a9a;margin-top:4px">Past year in '+MKT_NAME+': setups passing both averaged <b>'+(btf.avgRet>=0?'+':'')+btf.avgRet+'%</b> per trade ('+btf.n+' trades), the rest <b>'+(bth.avgRet>=0?'+':'')+bth.avgRet+'%</b> ('+bth.n+'). '+(btf.avgRet>=bth.avgRet?'The sizing has helped lately.':'Lately the sizing has <b>not</b> helped - treat it as a rough guide.')+'</div>':'';
+    qHTML='<div style="margin-top:10px;padding-top:8px;border-top:1px solid '+col+'33">'+head('SEPA SCORECARD, POSITION SIZE AND OTHER INDICATORS')+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
+      box('4 &middot; SEPA scorecard','a failing fundamentals leg blocks a BUY - full detail further down',qq.legs.map(legRow).join(''),qq.legs.some(function(l){return l.state==='fail';})?RD:G)+
+      box('5 &middot; Position size checks','both pass = full size, otherwise half; results due within 10 days or a shaky market = one step smaller',sz.map(item).join('')+szNote,szOk?G:AM)+
+      box('6 &middot; Other indicators &middot; '+cxOk+'/'+cx.length+' agree','shown for context, not scored - in a 4-year backtest none of these reliably told better breakouts from worse ones',cx.map(item).join(''),'#5a7a9a')+
+      '</div></div>';
+  }
 
   // ── 2. WHAT ANALYSTS SAY about this stock ──
   var an=r.analyst,aw=r.analystWeb,anHTML,sym=YSYM(r);
@@ -1067,7 +1084,8 @@ function decisionHTML(r){
       '<div style="margin-left:10px">&bull; <b style="color:'+RD+'">'+bt.stopRate+'</b> fell to the stop-loss and were sold for a small loss (up to '+bt.maxStop+'%)</div>'+
       '<div style="margin-left:10px">&bull; <b>'+bt.timeoutRate+'</b> had done neither after 3 months</div>'+
       '<div><b>Overall:</b> '+(good?'a small profit of about <b style="color:'+G+'">+'+bt.avgRet+'%</b> per trade on average. The few big winners pay for the many small losses, but only if you always sell when the stop-loss is hit.':
-        'a small loss of about <b style="color:'+RD+'">'+bt.avgRet+'%</b> per trade on average. BUY signals have not been working well lately, so be very picky and buy small.')+'</div>';
+        'a small loss of about <b style="color:'+RD+'">'+bt.avgRet+'%</b> per trade on average. BUY signals have not been working well lately, so be very picky and buy small.')+'</div>'+
+      (bt.full&&bt.full.n&&bt.half&&bt.half.n?'<div><b>Full-size vs half-size setups:</b> breakouts that were not extended and showed accumulation or relative strength averaged <b>'+(bt.full.avgRet>=0?'+':'')+bt.full.avgRet+'%</b> ('+bt.full.n+' trades, '+bt.full.winRate+'% reached the target); the rest averaged <b>'+(bt.half.avgRet>=0?'+':'')+bt.half.avgRet+'%</b> ('+bt.half.n+' trades, '+bt.half.winRate+'%). Fundamentals and results dates are not in this test.</div>':'');
   }
   var market=(mkTxt||evid)?'<div style="margin-top:8px;padding:7px 9px;border:1px dashed var(--border);border-radius:6px;background:#0a112066">'+
     head('MARKET CONDITIONS &amp; OVERALL BUY RULE TRACK RECORD ('+MKT_NAME.toUpperCase()+', NOT THIS STOCK)','var(--muted)')+
@@ -1078,10 +1096,10 @@ function decisionHTML(r){
     '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start">'+
       '<div style="min-width:190px;max-width:360px"><div style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.8px">DECISION &middot; SEPA RULES &middot; THIS STOCK</div>'+
       '<div style="font-size:24px;font-weight:900;color:'+col+';letter-spacing:-.5px;line-height:1.1;margin:2px 0">'+a[0]+'</div>'+
-      '<div style="font-size:10px;color:#c9d6e8;font-weight:700">'+a[2]+' &middot; '+d.passed+'/8 trend rules</div>'+
+      '<div style="font-size:10px;color:#c9d6e8;font-weight:700">'+(d.heldBack?'Breakout held back by the SEPA scorecard':a[2])+' &middot; '+d.passed+'/8 trend rules</div>'+
       '<div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin-top:5px">'+d.reasons.join(' ')+'</div></div>'+
       '<div style="display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:280px">'+prices+'</div>'+
-    '</div>'+why+
+    '</div>'+why+qHTML+
     '<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;padding-top:8px;border-top:1px solid '+col+'33;color:var(--muted)">'+
       '<div style="flex:1;min-width:300px">'+anHTML+'</div>'+
       '<div style="flex:1;min-width:260px">'+other+'</div>'+
@@ -1555,7 +1573,7 @@ function det(r){
   var _mean = function(a){ if(!a.length) return 0; var t=0; for(var q=0;q<a.length;q++)t+=a[q]; return t/a.length; };
   var _back = function(n){ if(_cl.length>n){ var o=_cl[_cl.length-1-n]; return o>0 ? (r.price-o)/o*100 : null; } return null; };
   var _c10=_back(10), _c20=_back(20);
-  var _pivot = _hi.length>=20 ? Math.max.apply(null,_hi.slice(-20)) : null;
+  var _pivot = (r.decision&&_num(r.decision.pivot)) ? r.decision.pivot : (_hi.length>=21 ? Math.max.apply(null,_hi.slice(-21,-1)) : null);   // same pivot as the BUY rule: prior 20 sessions
   if(_pivot!==null && !(_pivot>0)) _pivot=null;
   var _toPivot = _pivot ? (_pivot-r.price)/r.price*100 : null;
   var _v5 = _vo.length>=5 ? _mean(_vo.slice(-5)) : null;
@@ -1569,9 +1587,9 @@ function det(r){
 
   if(_pivot!==null){
     if(r.price >= _pivot*0.999){
-      nuances.push('Price is at the 20-day high of '+CUR+_pivot.toFixed(2)+' - the breakout is happening now, not pending. Volume today is '+r.volRatio.toFixed(1)+'x average, and the 1.5x threshold is what separates a real break from a fade.');
+      nuances.push('Price is above the pivot (the prior 20-day high) of '+CUR+_pivot.toFixed(2)+' - the breakout is happening now, not pending. Volume today is '+r.volRatio.toFixed(1)+'x average, and the 1.5x threshold is what separates a real break from a fade.');
     } else {
-      nuances.push('The 20-day high is '+CUR+_pivot.toFixed(2)+', '+_toPivot.toFixed(1)+'% above the current '+CUR+r.price.toFixed(2)+'. '+(_toPivot>10?'That gap is too wide to trade as a pivot - the stock has to build a tighter right side before an entry exists':'Set the alert there and require volume above 1.5x on the break; buying below the pivot is anticipating rather than confirming')+'.');
+      nuances.push('The pivot (prior 20-day high) is '+CUR+_pivot.toFixed(2)+', '+_toPivot.toFixed(1)+'% above the current '+CUR+r.price.toFixed(2)+'. '+(_toPivot>10?'That gap is too wide to trade as a pivot - the stock has to build a tighter right side before an entry exists':'Set the alert there and require volume above 1.5x on the break; buying below the pivot is anticipating rather than confirming')+'.');
     }
   }
 
@@ -1620,16 +1638,16 @@ function det(r){
   if(r.fundScore===0) risks.push('Fundamental score 0/3. This is a purely technical setup with no revenue or earnings confirmation.');
   if(risks.length===0) risks.push('No material counter-evidence in the data. The residual risk is market-level: a broad index reversal drags most leaders down with it.');
 
-  var tmEntry = r.price, tmStop = r.ma50 || (r.price*0.93), tmHTML;
+  var tmEntry = (r.decision&&_num(r.decision.entry)) ? r.decision.entry : r.price, tmStop = (r.decision&&_num(r.decision.stop)) ? r.decision.stop : (r.ma50 || (r.price*0.93)), tmHTML;   // same levels as the decision box
   if(tmStop >= tmEntry){
     tmHTML = 'Price sits below its MA50, so an MA50 stop would land above the entry. There is no valid risk level here yet - treat this as a base-building candidate to watch, not an entry.';
   } else {
     var rPct = (tmEntry-tmStop)/tmEntry*100;
     var maxPos = 100/rPct;
     var tgt = tmEntry + 2*(tmEntry-tmStop);
-    tmHTML = 'Entry '+CUR+tmEntry.toFixed(2)+', stop at MA50 '+CUR+tmStop.toFixed(2)+' = <strong style=\"color:#ff9f43\">'+rPct.toFixed(1)+'% risk</strong> per share. '+
+    tmHTML = 'Entry '+CUR+tmEntry.toFixed(2)+', stop '+CUR+tmStop.toFixed(2)+' = <strong style=\"color:#ff9f43\">'+rPct.toFixed(1)+'% risk</strong> per share. '+
       'To cap a full stop-out at 1% of your account, size this at no more than <strong style=\"color:var(--gold)\">'+maxPos.toFixed(1)+'% of capital</strong>. '+
-      'A 2R target sits at <strong style=\"color:#00d084\">'+CUR+tgt.toFixed(2)+'</strong>.'+
+      (r.decision&&r.decision.size?'The decision suggests <strong>'+r.decision.size+' size</strong>, so scale that down accordingly. ':'')+'A 2R target sits at <strong style=\"color:#00d084\">'+CUR+tgt.toFixed(2)+'</strong>.'+
       (rPct>10 ? ' <span style=\"color:#ff4757\">A stop more than 10% away breaches the standard risk ceiling - wait for a tighter entry nearer the pivot.</span>' : '')+
       (maxPos>25 ? ' <span style=\"color:var(--muted)\">The tight stop implies a large position; concentration beyond roughly 25% of capital is its own risk regardless of how close the stop sits.</span>' : '');
   }
@@ -1694,12 +1712,12 @@ function det(r){
     '</div></div>';
 
   var _entryExt = _pivot ? (r.price-_pivot)/_pivot*100 : null;
-  var _stopPct = (r.ma50 && r.ma50<r.price) ? (r.price-r.ma50)/r.price*100 : null;
+  var _stopPct = (r.decision&&_num(r.decision.riskPct)) ? r.decision.riskPct : ((r.ma50 && r.ma50<r.price) ? (r.price-r.ma50)/r.price*100 : null);   // the decision's own stop
 
   var _pb = [];
-  _pb.push(_ruleRow(_stopPct===null?null:(_stopPct<=8), _stopPct===null?'Cut every loss at 7-8% below entry - no valid stop level here yet':'Cut every loss at 7-8% below entry (an MA50 stop is '+_stopPct.toFixed(1)+'% away)'));
+  _pb.push(_ruleRow(_stopPct===null?null:(_stopPct<=8), _stopPct===null?'Cut every loss at 7-8% below entry - no valid stop level here yet':'Cut every loss at 7-8% below entry (the stop in the decision box is '+_stopPct.toFixed(1)+'% away)'));
   _pb.push(_ruleRow(null, 'Risk no more than 1% of the account on any single position - size from the stop, never from conviction'));
-  _pb.push(_ruleRow(_entryExt===null?null:(_entryExt<=5 && _entryExt>=-5), _entryExt===null?'Buy only near the pivot':'Buy within about 5% of the pivot (price is '+(_entryExt>=0?'+':'')+_entryExt.toFixed(1)+'% against the 20-day high)'));
+  _pb.push(_ruleRow(_entryExt===null?null:(_entryExt<=5 && _entryExt>=-5), _entryExt===null?'Buy only near the pivot':'Buy within about 5% of the pivot (price is '+(_entryExt>=0?'+':'')+_entryExt.toFixed(1)+'% against the pivot)'));
   _pb.push(_ruleRow(null, 'Never average down into a losing position - add only to trades already working'));
   _pb.push(_ruleRow(null, 'Keep the average gain at least twice the average loss; a 50% hit rate then still compounds'));
   _pb.push(_ruleRow(null, 'Sell part of the position into strength on the way up rather than round-tripping the whole gain'));
@@ -1714,6 +1732,8 @@ function det(r){
     '</div></div>';
 
   var _scoreCard = (function(){
+    var _q = r.decision && r.decision.quality;
+    if(_q && _q.legs && _q.legs.length) return _q.legs;   // built by the decision engine with the BUY rule's own pivot and stop
     var P = function(state,title,headline,body){ return {state:state,title:title,headline:headline,body:body}; };
     var pills = [];
 
@@ -1796,7 +1816,7 @@ function det(r){
       ? 'Every leg this screen can test is satisfied. What is left is the catalyst and the market backdrop, both of which are yours to judge.'
       : passed===0
       ? 'None of the testable legs hold. This is not a SEPA setup in its current state.'
-      : passed+' of the '+testable+' testable legs hold. Minervini treats these as cumulative rather than a majority vote - a strong chart does not compensate for a weak business, and neither compensates for a wide stop.';
+      : passed+' of the '+testable+' testable legs are fully met. A failing fundamentals leg blocks a BUY; a partial leg does not, but it is a reason for care. The decision box above uses exactly these legs.';
     return '<div style=\"margin-top:14px\"><div class=\"dh\">SEPA Scorecard &#8212; '+passed+'/'+testable+' testable legs</div>'+
       rows+
       fullSummary(r,passed,testable)+'</div>';
