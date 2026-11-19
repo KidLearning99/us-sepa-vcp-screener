@@ -366,6 +366,7 @@ tbody td{padding:8px 10px;vertical-align:middle}
 .empty{text-align:center;padding:50px;color:var(--muted)}
 footer{background:#040710;border-top:1px solid var(--border);padding:18px 24px;text-align:center;font-size:11px;color:var(--muted)}
 @media(max-width:1300px){.dpanel{grid-template-columns:1.5fr 1fr 1fr 1fr!important}}
+@media(min-width:1001px) and (max-width:1300px){.dpanel>div:nth-child(6),.dpanel>div:nth-child(7){grid-column:span 2}}
 @media(max-width:1000px){.dpanel{grid-template-columns:1fr 1fr!important}}
 @media(max-width:600px){.dpanel{grid-template-columns:1fr!important}.hero h1{font-size:26px}}
 </style>
