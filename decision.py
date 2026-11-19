@@ -37,6 +37,7 @@ RSI_HOT         = 80     # context only
 # Wording that differs by asset class (the crypto screener overrides these)
 FUND_NA_HEAD    = "No revenue or earnings data"
 FUND_NA_TEXT    = "Nothing came back for revenue or earnings growth, so this leg cannot be tested. Check the latest results yourself before buying."
+TREND_BEAT      = "the stock is beating the index"
 CATALYST_TEXT   = "A real catalyst (a contract, approval, new product or management change) has to be found in the company's announcements."
 
 
@@ -353,7 +354,7 @@ def quality(f, i, df, row=None, pivot=None, entry=None):
     tt_ok = bool(x["tt_all"])
     legs.append(_leg("pass" if tt_ok else "fail", "Trend",
                      "All 8 trend rules met" if tt_ok else "Trend rules not all met",
-                     "Price is above a rising 200-day, the 50-day and 150-day are stacked above it, and the stock is beating the index. This is the gate - no BUY without it."
+                     f"Price is above a rising 200-day, the 50-day and 150-day are stacked above it, and {TREND_BEAT}. This is the gate - no BUY without it."
                      if tt_ok else "The uptrend structure is incomplete, so this is a watch item, not a SEPA candidate."))
 
     # 2. Fundamentals (live only - there is no history of these for the backtest)
