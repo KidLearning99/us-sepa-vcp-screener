@@ -22,6 +22,9 @@ ALERT_ZONE      = 0.05   # within 5% below the pivot -> set an alert
 MAX_STOP        = 0.08   # never risk more than 8% (Minervini's 7-8% rule)
 TARGET_1        = 0.20   # Minervini takes part profits around +20-25%
 HORIZON         = 60     # backtest: sessions allowed for the trade to work
+YEAR            = 252    # sessions in a year (252 for shares; the crypto screener sets 365)
+T2_R            = 3      # second target = entry + T2_R x the risk
+T2_FLOOR        = None   # optional minimum gain for the second target (crypto keeps it above target 1)
 
 # SEPA scorecard and position sizing. The sizing checks were chosen from a
 # 4-year backtest of ~7,000 breakouts across the US, ASX and India screeners:
@@ -31,6 +34,10 @@ ACC_MIN         = 1.2    # up-day / down-day volume over 50 sessions that counts
 RS_HIGH         = 0.98   # RS line within 2% of its 1-year high
 EVENT_DAYS      = 10     # results due within this many days -> one size step down (gap risk)
 RSI_HOT         = 80     # context only
+# Wording that differs by asset class (the crypto screener overrides these)
+FUND_NA_HEAD    = "No revenue or earnings data"
+FUND_NA_TEXT    = "Nothing came back for revenue or earnings growth, so this leg cannot be tested. Check the latest results yourself before buying."
+CATALYST_TEXT   = "A real catalyst (a contract, approval, new product or management change) has to be found in the company's announcements."
 
 
 def _f(v, d=2):
@@ -39,6 +46,26 @@ def _f(v, d=2):
         return round(v, d) if math.isfinite(v) else None
     except Exception:
         return None
+
+
+def _p(v):
+    """A price: 2 decimals from 1 up (unchanged for most shares), 4 significant
+    figures below 1 so sub-dollar shares and small coins keep their precision."""
+    try:
+        v = float(v)
+        if not math.isfinite(v):
+            return None
+        return round(v, 2) if abs(v) >= 1 or v == 0 else round(v, 3 - int(math.floor(math.log10(abs(v)))))
+    except Exception:
+        return None
+
+
+def _ps(v):
+    """A price as text, with the same precision as _p."""
+    v = _p(v)
+    if v is None:
+        return "n/a"
+    return f"{v:.2f}" if abs(v) >= 1 or v == 0 else f"{v:.{max(2, 3 - int(math.floor(math.log10(abs(v)))))}f}"
 
 
 # ── Candlestick patterns ──────────────────────────────────────────────────────
@@ -165,10 +192,10 @@ def ichimoku(df):
     score = sum([pos == "above", tk == "bull", chikou_up, fut_bull]) - sum([pos == "below", tk == "bear", not chikou_up, not fut_bull])
     verdict = ("Strong bullish" if score == 4 else "Bullish" if score >= 2 else
                "Strong bearish" if score == -4 else "Bearish" if score <= -2 else "Neutral")
-    return {"tenkan": _f(tenkan.iloc[-1]), "kijun": _f(kijun.iloc[-1]),
-            "spanA": _f(a_now), "spanB": _f(b_now), "futA": _f(a_fut), "futB": _f(b_fut),
-            "cloudTop": _f(top), "cloudBot": _f(bot), "pos": pos, "tk": tk, "tkCrossAge": cross_age,
-            "chikouUp": chikou_up, "chikouRef": _f(c.iloc[-27]), "futBull": fut_bull,
+    return {"tenkan": _p(tenkan.iloc[-1]), "kijun": _p(kijun.iloc[-1]),
+            "spanA": _p(a_now), "spanB": _p(b_now), "futA": _p(a_fut), "futB": _p(b_fut),
+            "cloudTop": _p(top), "cloudBot": _p(bot), "pos": pos, "tk": tk, "tkCrossAge": cross_age,
+            "chikouUp": chikou_up, "chikouRef": _p(c.iloc[-27]), "futBull": fut_bull,
             "thickPct": _f(abs(a_now - b_now) / px * 100, 1), "verdict": verdict, "score": int(score)}
 
 
@@ -183,7 +210,7 @@ def market_state(bench):
     a50, a200 = px > ma50.iloc[-1], px > ma200.iloc[-1]
     r50 = ma50.iloc[-1] > ma50.iloc[-21]
     r200 = ma200.iloc[-1] > ma200.iloc[-21]
-    off = (px / c.tail(252).max() - 1) * 100
+    off = (px / c.tail(YEAR).max() - 1) * 100
     if a50 and a200 and r50:
         st, lab = "uptrend", "Confirmed uptrend"
     elif a200 and (a50 or r200):
@@ -192,7 +219,7 @@ def market_state(bench):
         st, lab = "correction", "Market in correction"
     return {"state": st, "label": lab, "allowBuys": st != "correction",
             "above50": bool(a50), "above200": bool(a200), "ma50Rising": bool(r50),
-            "ma200Rising": bool(r200), "offHigh": _f(off, 1), "level": _f(px)}
+            "ma200Rising": bool(r200), "offHigh": _f(off, 1), "level": _p(px)}
 
 
 # ── Rule components (shared by live decision and backtest) ────────────────────
@@ -206,14 +233,14 @@ def _frame(df, bench):
     f["ma150"] = c.rolling(150).mean()
     f["ma200"] = c.rolling(200).mean()
     f["ma200_1m"] = f["ma200"].shift(21)
-    f["hi252"] = h.rolling(252, min_periods=200).max()
-    f["lo252"] = l.rolling(252, min_periods=200).min()
+    f["hi252"] = h.rolling(YEAR, min_periods=int(YEAR * 0.8)).max()    # 52-week high/low
+    f["lo252"] = l.rolling(YEAR, min_periods=int(YEAR * 0.8)).min()
     f["pivot"] = h.shift(1).rolling(PIVOT_LOOKBACK).max()
     f["low10"] = l.rolling(10).min()
     f["vol50"] = v.rolling(50).mean()
     if bench is not None:
         b = bench.astype(float).reindex(c.index).ffill()
-        f["rs"] = (c / c.shift(126)) - (b / b.shift(126))
+        f["rs"] = (c / c.shift(YEAR // 2)) - (b / b.shift(YEAR // 2))
     else:
         f["rs"] = 0.0
     tt = pd.DataFrame({
@@ -257,7 +284,7 @@ def _indicators(f, df, bench):
     if bench is not None:
         b = bench.astype(float).reindex(c.index).ffill()
         rsl = c / b
-        f["rs_line_hi"] = rsl / rsl.rolling(252, min_periods=120).max()
+        f["rs_line_hi"] = rsl / rsl.rolling(YEAR, min_periods=YEAR // 2).max()
     else:
         f["rs_line_hi"] = np.nan
     # Volume dry-up: the 10 sessions before today vs the 50-day average
@@ -332,8 +359,7 @@ def quality(f, i, df, row=None, pivot=None, entry=None):
     # 2. Fundamentals (live only - there is no history of these for the backtest)
     rg, eg, fs = row.get("revGrowth"), row.get("epsGrowth"), row.get("fundScore") or 0
     if rg is None and eg is None:
-        legs.append(_leg("manual", "Fundamentals", "No revenue or earnings data",
-                         "Nothing came back for revenue or earnings growth, so this leg cannot be tested. Check the latest results yourself before buying."))
+        legs.append(_leg("manual", "Fundamentals", FUND_NA_HEAD, FUND_NA_TEXT))
     else:
         neg = (rg is not None and rg < 0) or (eg is not None and eg < 0)
         st = "fail" if neg or fs == 0 else ("pass" if fs >= 3 else "partial")
@@ -357,7 +383,7 @@ def quality(f, i, df, row=None, pivot=None, entry=None):
     else:
         broke = 0 <= dist <= MAX_CHASE and vr is not None and vr >= BREAKOUT_VOL
         st = "pass" if broke else ("partial" if -ALERT_ZONE <= dist <= MAX_CHASE else "fail")
-        body = (f"The pivot is the highest high of the prior {PIVOT_LOOKBACK} sessions ({pivot:.2f}); price is {dist * 100:+.1f}% against it" +
+        body = (f"The pivot is the highest high of the prior {PIVOT_LOOKBACK} sessions ({_ps(pivot)}); price is {dist * 100:+.1f}% against it" +
                 (f" on {vr:.1f}x normal volume" if vr is not None else "") + ". " +
                 ("That is a confirmed breakout: above the pivot, not more than 5% past it, and at least 1.5x volume. " if broke else
                  "Above the pivot but volume is under 1.5x, so the breakout is not confirmed. " if 0 <= dist <= MAX_CHASE else
@@ -370,14 +396,14 @@ def quality(f, i, df, row=None, pivot=None, entry=None):
                       "tighter than at the start, though not in order." if tight == "some" else
                       "not tightening yet.") +
                      " Shown for context; in the backtest the tightening pattern alone did not predict better results.")
-        legs.append(_leg(st, "Entry Point", f"Pivot {pivot:.2f} ({dist * 100:+.1f}%)", body))
+        legs.append(_leg(st, "Entry Point", f"Pivot {_ps(pivot)} ({dist * 100:+.1f}%)", body))
 
     # 4. Exit and risk - the BUY rule's own stop, plus how stretched the stock is
     if ext is not None and ext > EXT_MA50_MAX:
         st = "partial"
     else:
         st = "pass" if risk <= MAX_STOP + 1e-9 else "fail"
-    legs.append(_leg(st, "Exit and Risk", f"Stop {stop:.2f} ({risk * 100:.1f}% risk)",
+    legs.append(_leg(st, "Exit and Risk", f"Stop {_ps(stop)} ({risk * 100:.1f}% risk)",
                      f"The stop is {risk * 100:.1f}% below the {'price' if ent == px else 'entry at the pivot'} "
                      f"({'just under the 10-day low' if num(low10) and abs(stop - low10) < 1e-9 else 'the 8% maximum loss'}), "
                      f"so a 1% account risk allows a position of about {min(100 / max(risk * 100, 0.1), 100):.0f}% of capital. " +
@@ -391,7 +417,7 @@ def quality(f, i, df, row=None, pivot=None, entry=None):
     soon = dte is not None and 0 <= dte <= EVENT_DAYS
     legs.append(_leg("manual", "Catalyst", f"Results or event in {dte} days" if soon else "Not assessable from price data",
                      ("A scheduled event lands within " + str(EVENT_DAYS) + " days - gap risk that no stop can cover, so size is cut one step. " if soon else "") +
-                     "A real catalyst (a contract, approval, new product or management change) has to be found in the company's announcements."))
+                     CATALYST_TEXT))
 
     # Sizing checks (backtest-backed) and context indicators (shown, not scored)
     size_checks, context = [], []
@@ -446,7 +472,7 @@ def _check_value(name, f, has_bench=True):
     try:
         last = f.iloc[-1]
         c, m50, m150, m200 = last["c"], last["ma50"], last["ma150"], last["ma200"]
-        n = lambda v: f"{v:.2f}" if v == v else "n/a"
+        n = lambda v: _ps(v) if v == v else "n/a"
         if name == "Price above 150 and 200-day":
             return f"price {n(c)} vs 150-day {n(m150)}, 200-day {n(m200)}"
         if name == "150-day above 200-day":
@@ -464,9 +490,9 @@ def _check_value(name, f, has_bench=True):
             hi = last["hi252"]
             return f"{(c / hi - 1) * 100:+.0f}% from the high of {n(hi)}" if hi == hi and hi else "n/a"
         if name == "Beating the index over 6 months":
-            if not has_bench or len(f) < 127 or last["rs"] != last["rs"]:
+            if not has_bench or len(f) < YEAR // 2 + 1 or last["rs"] != last["rs"]:
                 return "n/a (no index data)" if not has_bench else "n/a"
-            own = c / f["c"].iloc[-127] - 1
+            own = c / f["c"].iloc[-(YEAR // 2 + 1)] - 1
             idx = own - last["rs"]
             return f"stock {own * 100:+.0f}% vs index {idx * 100:+.0f}%"
     except Exception:
@@ -489,7 +515,7 @@ def decide(df, bench, market, liquid=True, locked=False, row=None):
         px = float(df["Close"].iloc[-1])
         return {"action": "WATCH", "passed": 0, "total": 8, "checks": [],
                 "reasons": [f"Listed only {len(df)} sessions ago - too new for the trend rules. Wait for its first proper base (several weeks of tight, orderly trading)."],
-                "price": _f(px), "pivot": None, "distPivot": None, "volRatio": None,
+                "price": _p(px), "pivot": None, "distPivot": None, "volRatio": None,
                 "entry": None, "stop": None, "riskPct": None, "t1": None, "t2": None, "ma50": None}
     f, tt = _frame(df, bench)
     last, prev = f.iloc[-1], f.iloc[-2]
@@ -510,7 +536,7 @@ def decide(df, bench, market, liquid=True, locked=False, row=None):
     has_piv = pivot == pivot and bool(pivot)
     trigger = [
         {"ok": bool(above_pivot), "text": f"Closed above its {PIVOT_LOOKBACK}-day high (the pivot)",
-         "val": f"close {px:.2f} vs pivot {pivot:.2f}" if has_piv else "no pivot yet"},
+         "val": f"close {_ps(px)} vs pivot {_ps(pivot)}" if has_piv else "no pivot yet"},
         {"ok": bool(dist is not None and dist <= MAX_CHASE), "text": f"Not more than {MAX_CHASE*100:.0f}% above the pivot (not chasing)",
          "val": f"{dist*100:+.1f}% from the pivot" if dist is not None else "-"},
         {"ok": bool(vr >= BREAKOUT_VOL), "text": f"Volume at least {BREAKOUT_VOL:g}x normal",
@@ -537,16 +563,16 @@ def decide(df, bench, market, liquid=True, locked=False, row=None):
     elif trend_ok and liquid:
         if above_pivot and dist <= MAX_CHASE and vr >= BREAKOUT_VOL:
             action = "BUY"
-            reasons = [f"Broke above its {PIVOT_LOOKBACK}-day high (pivot {pivot:.2f}) on {vr:.1f}x normal volume with every trend rule met."]
+            reasons = [f"Broke above its {PIVOT_LOOKBACK}-day high (pivot {_ps(pivot)}) on {vr:.1f}x normal volume with every trend rule met."]
         elif above_pivot and dist <= MAX_CHASE:
             action = "ALERT"
-            reasons = [f"Above the pivot ({pivot:.2f}) but volume is only {vr:.1f}x normal - a real breakout needs at least {BREAKOUT_VOL}x. Wait for a high-volume day."]
+            reasons = [f"Above the pivot ({_ps(pivot)}) but volume is only {vr:.1f}x normal - a real breakout needs at least {BREAKOUT_VOL}x. Wait for a high-volume day."]
         elif above_pivot:
             action = "WAIT"
             reasons = [f"{dist*100:.0f}% above the pivot - extended. Buying here means a wide stop; wait for a pullback toward the 10/21-day averages or a new base."]
         elif dist is not None and dist >= -ALERT_ZONE:
             action = "ALERT"
-            reasons = [f"All trend rules met and {abs(dist)*100:.1f}% below the pivot. Set a buy alert at {pivot:.2f} and act only if it breaks out on volume."]
+            reasons = [f"All trend rules met and {abs(dist)*100:.1f}% below the pivot. Set a buy alert at {_ps(pivot)} and act only if it breaks out on volume."]
         else:
             action = "WATCH"
             reasons = [f"Trend rules met but {abs(dist)*100:.0f}% below the pivot - still building a base."]
@@ -556,7 +582,7 @@ def decide(df, bench, market, liquid=True, locked=False, row=None):
             keep, size, why = grade(q)
             if not keep:
                 action, held_back = "WAIT", True
-                reasons = [f"Broke above the pivot ({pivot:.2f}) on {vr:.1f}x volume, but it is not a SEPA buy: " + "; ".join(why) + "."]
+                reasons = [f"Broke above the pivot ({_ps(pivot)}) on {vr:.1f}x volume, but it is not a SEPA buy: " + "; ".join(why) + "."]
             elif size == "full":
                 reasons.append("No SEPA leg fails, the stock is not extended, and accumulation or relative strength shows institutions buying.")
             else:
@@ -591,13 +617,13 @@ def decide(df, bench, market, liquid=True, locked=False, row=None):
     out = {
         "action": action, "reasons": reasons, "checks": checks, "trigger": trigger,
         "passed": passed, "total": 8,
-        "price": _f(px), "pivot": _f(pivot), "distPivot": _f(dist * 100, 1) if dist is not None else None,
+        "price": _p(px), "pivot": _p(pivot), "distPivot": _f(dist * 100, 1) if dist is not None else None,
         "volRatio": _f(vr, 2),
-        "entry": _f(entry) if entry else None, "stop": _f(stop) if stop else None,
+        "entry": _p(entry) if entry else None, "stop": _p(stop) if stop else None,
         "riskPct": _f(risk * 100, 1) if risk else None,
-        "t1": _f(entry * (1 + TARGET_1)) if entry else None,
-        "t2": _f(entry + 3 * (entry - stop)) if entry and stop else None,
-        "ma50": _f(last["ma50"]),
+        "t1": _p(entry * (1 + TARGET_1)) if entry else None,
+        "t2": _p(max(entry + T2_R * (entry - stop), entry * (1 + T2_FLOOR) if T2_FLOOR else 0)) if entry and stop else None,
+        "ma50": _p(last["ma50"]),
         "size": size if action == "BUY" else None,
         "heldBack": held_back,
     }
@@ -662,17 +688,18 @@ def _stats(trades):
     }
 
 
-def backtest(hist_map, bench, min_adv=0.0, recent=252):
+def backtest(hist_map, bench, min_adv=0.0, recent=None):
     """Apply the BUY rule to every stock on every day of the last `recent`
     sessions (with HORIZON sessions still to come) and follow each trade.
     The top-level numbers are all price breakouts; "full" and "half" split them
     by the sizing checks, so the dashboard shows whether the sizing still earns
     its keep in this market. Fundamentals and results dates have no history
     here, so they are not part of the test."""
+    recent = recent or YEAR
     all_t, full_t, half_t = [], [], []
     for t, df in hist_map.items():
         try:
-            if df is None or len(df) < 260:
+            if df is None or len(df) < YEAR + 8:
                 continue
             f, _ = _frame(df, bench)
             sig = (f["tt_all"] & (f["c"] > f["pivot"]) & (f["c"] <= f["pivot"] * (1 + MAX_CHASE))
