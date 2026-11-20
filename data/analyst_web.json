@@ -1084,6 +1084,208 @@
           "url": "https://www.marketbeat.com/instant-alerts/consensus-american-water-works-company-inc-nyse-awk-stock-has-average-price-target-of-14011-according-to-analysts-2026-10-09/"
         }
       ]
+    },
+    "SONY": {
+      "checked": "2026-11-20",
+      "n": 23,
+      "rating": "buy",
+      "tMean": 31.2,
+      "tLow": 23.75,
+      "tHigh": 37.7,
+      "asOf": "2026-11",
+      "brokers": "Jefferies, Toyo Securities, Macquarie, TD Cowen, Bernstein",
+      "note": "These targets come from the Tokyo 6758 consensus in yen (mean 4,994, range 3,800-6,030) and were converted at about 160 JPY/USD, the rate implied by the ADR price against the Tokyo close (1 ADR = 1 share). The thinner USD-ADR coverage on Investing.com shows 4 analysts averaging $31.75, which is close.",
+      "sources": [
+        {
+          "name": "MarketScreener",
+          "url": "https://www.marketscreener.com/quote/stock/SONY-GROUP-CORPORATION-6492482/consensus/"
+        },
+        {
+          "name": "Investing.com",
+          "url": "https://www.investing.com/equities/sony-consensus-estimates"
+        }
+      ]
+    },
+    "RGA": {
+      "checked": "2026-11-20",
+      "n": 10,
+      "rating": "buy",
+      "tMean": 279.78,
+      "tLow": 236,
+      "tHigh": 302,
+      "asOf": "2026-10",
+      "brokers": "TD Cowen, J.P. Morgan, Wells Fargo, Piper Sandler, Barclays",
+      "note": "Seven of the ten analysts rate it Buy or Strong Buy, with 2 Holds and 1 Sell. Most targets were raised in October 2026.",
+      "sources": [
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/rga/forecast/"
+        }
+      ]
+    },
+    "SLAB": {
+      "checked": "2026-11-20",
+      "n": 8,
+      "rating": "hold",
+      "tMean": 222.86,
+      "tLow": 200,
+      "tHigh": 231,
+      "asOf": "2026-08",
+      "brokers": "Stifel, RBC Capital, Susquehanna",
+      "note": "Every analyst rates it Hold because Texas Instruments agreed in Feb 2026 to buy the company for $231 per share in cash. Targets cluster around the deal price.",
+      "sources": [
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/slab/forecast"
+        },
+        {
+          "name": "Nasdaq (TI press release)",
+          "url": "https://www.nasdaq.com/press-release/texas-instruments-acquire-silicon-labs-2026-02-04"
+        }
+      ]
+    },
+    "SIGI": {
+      "checked": "2026-11-20",
+      "n": 6,
+      "rating": "hold",
+      "tMean": 102.5,
+      "tLow": 85,
+      "tHigh": 115,
+      "asOf": "2026-10",
+      "brokers": "Morgan Stanley, KBW, Piper Sandler, RBC Capital, BMO Capital, Oppenheimer",
+      "note": "Most analysts are on Hold. RBC and Oppenheimer rate it Buy at $115, and Morgan Stanley rates it Sell at $85. Benzinga shows a slightly older set of 8 analysts averaging $100.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/SIGI/forecast"
+        },
+        {
+          "name": "Benzinga",
+          "url": "https://www.benzinga.com/quote/SIGI/price-targets"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/sigi/forecast/"
+        }
+      ]
+    },
+    "LH": {
+      "checked": "2026-11-20",
+      "n": 17,
+      "rating": "buy",
+      "tMean": 382.25,
+      "tLow": 330,
+      "tHigh": 420,
+      "asOf": "2026-11",
+      "brokers": "Mizuho, Piper Sandler, Truist, BofA, Deutsche Bank, UBS, Morgan Stanley, Baird",
+      "note": "12 of 17 analysts rate it Buy or Strong Buy and 5 rate it Hold. Targets were broadly raised after Q3 results in late October and early November 2026.",
+      "sources": [
+        {
+          "name": "StockAnalysis forecast",
+          "url": "https://stockanalysis.com/stocks/lh/forecast/"
+        },
+        {
+          "name": "StockAnalysis ratings",
+          "url": "https://stockanalysis.com/stocks/lh/ratings/"
+        }
+      ]
+    },
+    "RHP": {
+      "checked": "2026-11-20",
+      "n": 12,
+      "rating": "strong_buy",
+      "tMean": 138.45,
+      "tLow": 129,
+      "tHigh": 152,
+      "asOf": "2026-10",
+      "brokers": "Barclays, Raymond James, BMO, Bernstein, Truist, Citi, BofA, Wells Fargo, Deutsche Bank, Cantor, Evercore ISI, J.P. Morgan",
+      "note": "Nearly every analyst rates it Buy; Bernstein's Hold is the only exception. The stock is already near the low end of the target range, so the average target is only modestly above the current price.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/rhp/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/rhp/forecast"
+        }
+      ]
+    },
+    "RPRX": {
+      "checked": "2026-11-20",
+      "n": 6,
+      "rating": "strong_buy",
+      "tMean": 70.67,
+      "tLow": 63,
+      "tHigh": 78,
+      "asOf": "2026-11",
+      "brokers": "Citi, Morgan Stanley, J.P. Morgan, BofA, UBS, TD Cowen",
+      "note": "All six recent ratings are Buy, which TipRanks labels a Strong Buy consensus. Citi, Morgan Stanley and J.P. Morgan raised targets after Q3 results in early November.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/rprx/forecast"
+        }
+      ]
+    },
+    "SAIL": {
+      "checked": "2026-11-20",
+      "n": 23,
+      "rating": "buy",
+      "tMean": 22.55,
+      "tLow": 17,
+      "tHigh": 30,
+      "asOf": "2026-11",
+      "brokers": "TD Cowen, Mizuho, RBC, BofA, Evercore ISI, Piper Sandler, Stephens, Cantor Fitzgerald",
+      "note": "17 analysts rate it Buy and 6 rate it Hold, but the average target is barely above the current price. StockAnalysis has a similar $21.96 average from 27 analysts.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/sail/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/sail/forecast/"
+        }
+      ]
+    },
+    "SIRI": {
+      "checked": "2026-11-20",
+      "n": 9,
+      "rating": "buy",
+      "tMean": 35.89,
+      "tLow": 27,
+      "tHigh": 47,
+      "asOf": "2026-11",
+      "brokers": "J.P. Morgan, Barrington, Goldman Sachs, BofA, Rosenblatt, Evercore ISI, Wells Fargo",
+      "note": "Views are split: 5 Buy, 3 Hold and 1 Sell (BofA, $27), and Goldman upgraded to Buy in early November. StockAnalysis's older 14-analyst consensus is Hold, with a $33.23 average.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/siri/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/siri/forecast/"
+        }
+      ]
+    },
+    "SJM": {
+      "checked": "2026-11-20",
+      "n": 15,
+      "rating": "buy",
+      "tMean": 144.54,
+      "tLow": 125,
+      "tHigh": 160,
+      "asOf": "2026-10",
+      "brokers": "Bernstein, Barclays, J.P. Morgan, TD Cowen, BofA, Deutsche Bank, Wells Fargo, Stifel, RBC, UBS, Evercore ISI, BTIG, Jefferies",
+      "note": "9 Buy and 6 Hold, for a moderate-buy consensus. Most targets were raised after the late-August results, and Barclays trimmed its target to $137 in October.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/sjm/forecast"
+        }
+      ]
     }
   }
 }
