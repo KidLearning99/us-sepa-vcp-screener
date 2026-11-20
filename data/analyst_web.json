@@ -1,6 +1,6 @@
 {
   "about": "Analyst ratings found by web research for stocks that Yahoo Finance does not cover. Maintained by a weekly scheduled task; read by build_dashboard.py. n = number of analysts found (0 = searched, none found). rating: strong_buy | buy | hold | underperform | sell | null. checked = date researched; asOf = date of the newest analyst view found.",
-  "updated": "2026-11-19",
+  "updated": "2026-11-20",
   "stocks": {
     "CHT": {
       "checked": "2026-11-19",
@@ -313,6 +313,775 @@
         {
           "name": "TipRanks",
           "url": "https://www.tipranks.com/stocks/unp/forecast"
+        }
+      ]
+    },
+    "BILL": {
+      "checked": "2026-11-20",
+      "n": 16,
+      "rating": "buy",
+      "tMean": 63.6,
+      "tLow": 50,
+      "tHigh": 76,
+      "asOf": "2026-11",
+      "brokers": "TD Cowen, Susquehanna, BMO, Truist, William Blair, UBS, Morgan Stanley, Citi, Mizuho",
+      "note": "TipRanks counts 10 Buy and 6 Hold. The average target is slightly below the price after a sharp mid-November rally. William Blair upgraded the stock, Susquehanna downgraded it to Hold, and several firms raised targets into the $60s-70s.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/bill/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/bill/forecast/"
+        },
+        {
+          "name": "Quiver Quantitative",
+          "url": "https://www.quiverquant.com/news/BILL+jumps+as+analyst+upgrade+adds+to+optimism+around+margins+and+monetization"
+        }
+      ]
+    },
+    "DIS": {
+      "checked": "2026-11-20",
+      "n": 15,
+      "rating": "strong_buy",
+      "tMean": 136.07,
+      "tLow": 125,
+      "tHigh": 144,
+      "asOf": "2026-11",
+      "brokers": "Goldman Sachs, JPMorgan, Morgan Stanley, Wells Fargo, BofA, Barclays, Bernstein, Evercore ISI, Guggenheim, Needham, Raymond James, Rosenblatt, Citi, UBS",
+      "note": "All 15 TipRanks analysts rate it Buy, and most raised targets after the mid-November results. MarketScreener's broader October consensus (33 analysts, Buy) was lower at about $127, before those increases.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://tipranks.com/stocks/dis/forecast"
+        },
+        {
+          "name": "MarketScreener",
+          "url": "https://www.marketscreener.com/quote/stock/WALT-DISNEY-COMPANY-THE-4842/consensus/"
+        },
+        {
+          "name": "TIKR",
+          "url": "https://www.tikr.com/blog/disney-rises-5-as-10-analysts-raise-targets-on-earnings-beat-and-3-billion-savings-plan"
+        }
+      ]
+    },
+    "CHE": {
+      "checked": "2026-11-20",
+      "n": 5,
+      "rating": "buy",
+      "tMean": 612,
+      "tLow": 555,
+      "tHigh": 675,
+      "asOf": "2026-10",
+      "brokers": "Oppenheimer, UBS, Jefferies, BofA, RBC Capital",
+      "note": "Coverage is small: 3 Buy and 2 Hold, with targets raised after late-October results. The average target implies about 11% upside.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/che/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/che/forecast/"
+        }
+      ]
+    },
+    "AFG": {
+      "checked": "2026-11-20",
+      "n": 7,
+      "rating": "hold",
+      "tMean": 158,
+      "tLow": 143,
+      "tHigh": 180,
+      "asOf": "2026-10",
+      "brokers": "Wells Fargo, KBW, Piper Sandler, Raymond James",
+      "note": "Sources disagree on the label: TipRanks says Hold, MarketScreener says Outperform. Most individual ratings are Hold. The average target is close to the current price.",
+      "sources": [
+        {
+          "name": "MarketScreener",
+          "url": "https://ca.marketscreener.com/quote/stock/AMERICAN-FINANCIAL-GROUP--11554/consensus/"
+        },
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/afg/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/afg/forecast/"
+        }
+      ]
+    },
+    "AIZ": {
+      "checked": "2026-11-20",
+      "n": 5,
+      "rating": "strong_buy",
+      "tMean": 351.6,
+      "tLow": 320,
+      "tHigh": 377,
+      "asOf": "2026-11",
+      "brokers": "Morgan Stanley, UBS, Piper Sandler, KBW, BMO, Truist",
+      "note": "Every recent rating is Buy, and four firms raised targets in early-to-mid November. The average target implies roughly 11% upside.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/aiz/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/aiz/ratings/"
+        }
+      ]
+    },
+    "ARGX": {
+      "checked": "2026-11-20",
+      "n": 20,
+      "rating": "strong_buy",
+      "tMean": 1175.05,
+      "tLow": 861,
+      "tHigh": 1400,
+      "asOf": "2026-11",
+      "brokers": "Piper Sandler, Morgan Stanley, H.C. Wainwright, Citi, Wedbush, UBS, Baird",
+      "note": "Nineteen analysts rate it Buy and one (Baird) rates it Hold. The average target sits about 25% above the current price.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/argx/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/ARGX/forecast/"
+        }
+      ]
+    },
+    "BLCO": {
+      "checked": "2026-11-20",
+      "n": 10,
+      "rating": "buy",
+      "tMean": 22.22,
+      "tLow": 18,
+      "tHigh": 27,
+      "asOf": "2026-11",
+      "brokers": "Barclays, H.C. Wainwright, RBC, Citi, Leerink, JPMorgan, Deutsche Bank, BofA, Stifel",
+      "note": "Views are split (4 Buy, 5 Hold, 1 Sell), although TipRanks labels the consensus Moderate Buy. Targets rose after the late-October results and imply modest upside.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/blco/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/blco/forecast/"
+        }
+      ]
+    },
+    "CBC": {
+      "checked": "2026-11-20",
+      "n": 4,
+      "rating": "hold",
+      "tMean": 36.13,
+      "tLow": 32,
+      "tHigh": 40,
+      "asOf": "2026-11",
+      "brokers": "BofA, KBW, Piper Sandler, Morgan Stanley",
+      "note": "Three of four recent ratings are Hold, after BofA downgraded in November. The stock trades above the average target.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/cbc/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/cbc/forecast/"
+        }
+      ]
+    },
+    "ADT": {
+      "checked": "2026-11-20",
+      "n": 4,
+      "rating": "hold",
+      "tMean": 9.0,
+      "tLow": 7,
+      "tHigh": 10,
+      "asOf": "2026-10",
+      "brokers": "Barclays, Morgan Stanley, BTIG, RBC Capital",
+      "note": "Thrive Holdings agreed on Oct 29, 2026 to buy ADT for $10.00 per share in cash, with closing expected in Q1 2027. Analysts have mostly moved to Hold, so the cash offer price matters more than the targets.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/adt/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/adt/forecast/"
+        },
+        {
+          "name": "Finviz",
+          "url": "https://finviz.com/news/411638/adt-to-be-acquired-by-thrive-holdings-in-153-billion-transaction"
+        }
+      ]
+    },
+    "AHR": {
+      "checked": "2026-11-20",
+      "n": 16,
+      "rating": "strong_buy",
+      "tMean": 63.69,
+      "tLow": 55,
+      "tHigh": 74,
+      "asOf": "2026-10",
+      "brokers": "UBS, Raymond James, Barclays, BMO, BofA, Scotiabank, KeyBanc, Citi, Morgan Stanley",
+      "note": "Every covering analyst rates it Buy or Strong Buy. TipRanks' 3-month figure is similar ($62.36 across 12 analysts). The average implies about 9% upside.",
+      "sources": [
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/ahr/forecast/"
+        },
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/AHR/forecast"
+        }
+      ]
+    },
+    "AMRX": {
+      "checked": "2026-11-20",
+      "n": 6,
+      "rating": "strong_buy",
+      "tMean": 24.83,
+      "tLow": 20,
+      "tHigh": 28,
+      "asOf": "2026-11",
+      "brokers": "UBS, Leerink, JPMorgan, Oppenheimer, Goldman Sachs, Barclays",
+      "note": "All recent ratings are Buy, and several firms raised targets after early-November results. The average implies about 13% upside.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/amrx/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/amrx/forecast/"
+        }
+      ]
+    },
+    "BOX": {
+      "checked": "2026-11-20",
+      "n": 9,
+      "rating": "buy",
+      "tMean": 47.29,
+      "tLow": 35,
+      "tHigh": 60,
+      "asOf": "2026-11",
+      "brokers": "UBS, Citi, BofA, Morgan Stanley, D.A. Davidson, RBC, William Blair",
+      "note": "UBS upgraded to Buy on Nov 19, raising its target to $55, and Citi and BofA are also bullish. TipRanks' late-October snapshot still showed a split Hold consensus averaging about $40.",
+      "sources": [
+        {
+          "name": "MarketScreener",
+          "url": "https://ca.marketscreener.com/quote/stock/BOX-INC-111966751/consensus/"
+        },
+        {
+          "name": "Investing.com",
+          "url": "https://www.investing.com/news/analyst-ratings/ubs-upgrades-box-stock-rating-on-aidriven-growth-outlook-93CH-5038032"
+        },
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/box/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/box/forecast/"
+        }
+      ]
+    },
+    "CP": {
+      "checked": "2026-11-20",
+      "n": 21,
+      "rating": "strong_buy",
+      "tMean": 99.59,
+      "tLow": 73.57,
+      "tHigh": 106,
+      "asOf": "2026-11",
+      "brokers": "Bernstein, Argus, TD Cowen, Susquehanna, Stifel, RBC, Scotiabank, UBS, JPMorgan, CIBC, Citi, Stephens",
+      "note": "TipRanks shows 17 Buy and 4 Hold. StockAnalysis's broader count (30 analysts, Buy) gives a nearly identical average of about $99. Some targets are converted from CAD.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/cp/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/cp/forecast"
+        }
+      ]
+    },
+    "DRI": {
+      "checked": "2026-11-20",
+      "n": 21,
+      "rating": "buy",
+      "tMean": 238,
+      "tLow": 210,
+      "tHigh": 276,
+      "asOf": "2026-11",
+      "brokers": "Bernstein, Citi, KeyBanc, JPMorgan, BofA, BTIG, Wells Fargo, BMO, Mizuho, Evercore ISI, Guggenheim, Morgan Stanley, UBS",
+      "note": "TipRanks counts 15 Buy and 6 Hold. The average target is only slightly above the current price. StockAnalysis's larger panel (28 analysts) averages about $233.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/dri/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/dri/forecast/"
+        }
+      ]
+    },
+    "EG": {
+      "checked": "2026-11-20",
+      "n": 11,
+      "rating": "buy",
+      "tMean": 430.3,
+      "tLow": 385,
+      "tHigh": 475,
+      "asOf": "2026-11",
+      "brokers": "Mizuho, KBW, Citi, Wells Fargo, Cantor Fitzgerald, UBS, Morgan Stanley, Barclays, BofA, RBC",
+      "note": "The label is Moderate Buy, but 7 of 11 analysts rate it Hold. Targets moved up after early-November results, and the average is roughly in line with the price.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/eg/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/eg/forecast/"
+        }
+      ]
+    },
+    "AAPL": {
+      "checked": "2026-11-20",
+      "n": 45,
+      "rating": "buy",
+      "tMean": 346.37,
+      "tLow": 250,
+      "tHigh": 425,
+      "asOf": "2026-11",
+      "brokers": "Bernstein, China Renaissance, KeyBanc, BofA, JPMorgan, Barclays, UBS, Citi, Morgan Stanley, TD Cowen, Jefferies",
+      "note": "The consensus is Buy, but several firms rate it Sell (including Barclays, Jefferies and KeyBanc). The average target is slightly below the current price.",
+      "sources": [
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/aapl/forecast/"
+        },
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/AAPL/forecast"
+        }
+      ]
+    },
+    "A": {
+      "checked": "2026-11-20",
+      "n": 15,
+      "rating": "strong_buy",
+      "tMean": 183.6,
+      "tLow": 150,
+      "tHigh": 196,
+      "asOf": "2026-10",
+      "brokers": "Deutsche Bank, Bernstein, UBS, Morgan Stanley, TD Cowen, BofA, Barclays",
+      "note": "TipRanks shows 12 Buy and 3 Hold, with targets raised in October. MarketScreener's September consensus (22 analysts, Buy) was lower at about $175.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/a/forecast"
+        },
+        {
+          "name": "MarketScreener",
+          "url": "https://uk.marketscreener.com/quote/stock/AGILENT-TECHNOLOGIES-INC-11488/consensus/"
+        }
+      ]
+    },
+    "ADP": {
+      "checked": "2026-11-20",
+      "n": 15,
+      "rating": "hold",
+      "tMean": 303.07,
+      "tLow": 250,
+      "tHigh": 345,
+      "asOf": "2026-11",
+      "brokers": "BofA (Buy, $345 initiation 11/19), Guggenheim (Buy $340), Jefferies (Sell $250), Cantor (Buy)",
+      "note": "TipRanks shows 4 Buy, 10 Hold and 1 Sell over the past 3 months, so the stock sits at Hold with the average target roughly at the current price. StockAnalysis (18 analysts, $290.40, Oct 23) and a MarketBeat summary (12 analysts, $276.36, Oct 25) also say Hold but with lower, older averages.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/adp/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/adp/forecast/"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/instant-alerts/consensus-automatic-data-processing-inc-nasdaq-adp-stock-has-average-target-price-of-27636-2026-10-25/"
+        }
+      ]
+    },
+    "BDX": {
+      "checked": "2026-11-20",
+      "n": 11,
+      "rating": "buy",
+      "tMean": 222.4,
+      "tLow": 182,
+      "tHigh": 242,
+      "asOf": "2026-11",
+      "brokers": "Wells Fargo (upgraded to Buy $242), UBS/Jefferies $242, Citi $241, Barclays (Sell $195)",
+      "note": "Targets jumped after early-November results; TipRanks counts 5 Buy, 5 Hold, 1 Sell for a Moderate Buy. StockAnalysis still shows a pre-results Buy consensus of 16 analysts at $195.57 (Oct 7), which looks stale.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/bdx/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/bdx/forecast/"
+        }
+      ]
+    },
+    "CAH": {
+      "checked": "2026-11-20",
+      "n": 12,
+      "rating": "strong_buy",
+      "tMean": 295.58,
+      "tLow": 270,
+      "tHigh": 320,
+      "asOf": "2026-11",
+      "brokers": "BofA $320, UBS $310, Argus $309, Morgan Stanley $306, JPMorgan (Hold $286)",
+      "note": "TipRanks lists 11 Buy and 1 Hold, a Strong Buy, as of Nov 13; StockAnalysis has an older Buy consensus (17 analysts, $271.47, Oct 16). MarketBeat headlines show later raises (Wells Fargo to $321 on Nov 17, Barclays on Nov 18) that are not yet in the average.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/cah/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/cah/forecast/"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/instant-alerts/analyst-cardinal-health-nyse-cah-given-new-32100-price-target-at-wells-fargo-company-2026-11-17/"
+        }
+      ]
+    },
+    "CB": {
+      "checked": "2026-11-20",
+      "n": 15,
+      "rating": "hold",
+      "tMean": 375.0,
+      "tLow": 335,
+      "tHigh": 410,
+      "asOf": "2026-10",
+      "brokers": "Roth MKM (Buy $410), Citi (Buy $405), Goldman (Buy $403), JPMorgan (Hold $374), BofA (Sell $335)",
+      "note": "Sources disagree on the label: TipRanks shows 4 Buy, 10 Hold, 1 Sell (Hold), while StockAnalysis/S&P labels it Buy (25 analysts, avg $371.48) and Investing.com calls it Buy despite more Holds than Buys. Rating set by the Hold majority in the rating counts; average targets cluster around $367-375.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/CB/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/cb/forecast/"
+        },
+        {
+          "name": "Investing.com",
+          "url": "https://www.investing.com/equities/chubb-corp-consensus-estimates"
+        }
+      ]
+    },
+    "CCEP": {
+      "checked": "2026-11-20",
+      "n": 11,
+      "rating": "buy",
+      "tMean": 109.34,
+      "tLow": 92,
+      "tHigh": 118,
+      "asOf": "2026-11",
+      "brokers": "Argus $118, Wells Fargo $115, Goldman $113, Barclays $112, JPMorgan (Sell $92)",
+      "note": "USD targets for the Nasdaq listing; TipRanks (as of Oct 31) has 7 Buy, 3 Hold, 1 Sell, and StockAnalysis is similar (13 analysts, $109.19). The stock now trades above that average, and MarketBeat headlines show target raises in November (to $115 on Nov 4, Barclays on Nov 5 and Nov 19) not yet reflected.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/ccep/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/ccep/forecast/"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/instant-alerts/analyst-coca-cola-europacific-partners-nasdaq-ccep-stock-price-target-raised-at-barclays-2026-11-19/"
+        }
+      ]
+    },
+    "CDW": {
+      "checked": "2026-11-20",
+      "n": 7,
+      "rating": "buy",
+      "tMean": 181.0,
+      "tLow": 148,
+      "tHigh": 195,
+      "asOf": "2026-11",
+      "brokers": "UBS $195, JPMorgan $195, Morgan Stanley $193, Evercore $185, Citi (Hold $170)",
+      "note": "TipRanks shows 5 Buy and 2 Hold after early-November results, averaging $181 over six targets. A MarketBeat headline puts the consensus target lower at $169.38 (Nov 17), and its Barclays raise on Nov 16 is not in the TipRanks figure.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/cdw/forecast"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/instant-alerts/consensus-cdw-corporation-nasdaq-cdw-stock-has-consensus-price-target-of-16938-according-to-brokerages-2026-11-17/"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/cdw/forecast/"
+        }
+      ]
+    },
+    "CL": {
+      "checked": "2026-11-20",
+      "n": 12,
+      "rating": "buy",
+      "tMean": 102.17,
+      "tLow": 95,
+      "tHigh": 112,
+      "asOf": "2026-11",
+      "brokers": "UBS $112, Morgan Stanley $111, BNP Paribas Exane $108; Holds at Barclays, Wells Fargo, TD Cowen, Bernstein",
+      "note": "TipRanks has 8 Buy and 4 Hold with an average near $102; StockAnalysis (21 analysts, $101.70) and a MarketBeat headline ($101.22, Nov 18) agree closely.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/cl/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/cl/forecast/"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/instant-alerts/consensus-colgate-palmolive-company-nyse-cl-stock-has-average-target-price-of-10122-2026-11-18/"
+        }
+      ]
+    },
+    "CR": {
+      "checked": "2026-11-20",
+      "n": 6,
+      "rating": "strong_buy",
+      "tMean": 248.67,
+      "tLow": 240,
+      "tHigh": 260,
+      "asOf": "2026-11",
+      "brokers": "BMO $260, D.A. Davidson $255, BofA $250, Stifel $247, UBS/Deutsche $240",
+      "note": "All six analysts on TipRanks in the last 3 months rate it Buy. StockAnalysis also shows Strong Buy but from older data (10 analysts, $237.20, mid-September).",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/cr/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/cr/forecast/"
+        }
+      ]
+    },
+    "DEO": {
+      "checked": "2026-11-20",
+      "n": 18,
+      "rating": "hold",
+      "tMean": 99.75,
+      "tLow": null,
+      "tHigh": null,
+      "asOf": "2026-10",
+      "brokers": "Jefferies (Buy $117), TD Cowen (Buy $110), BofA (Buy $101), Morgan Stanley (Sell $83), UBS (Neutral)",
+      "note": "MarketBeat's 18-broker view (Oct 31) is Hold with an even 8 Buy-side vs 8 Hold split plus 2 Sell, average $99.75 for the US ADR. Other sources lean Buy on thinner coverage: TipRanks has only 3 recent analysts (avg $103.33) and StockAnalysis 8 (avg $106.29, Sept data).",
+      "sources": [
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/instant-alerts/consensus-diageo-plc-deo-what-are-researchers-saying-about-this-stock-2026-10-31/"
+        },
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/deo/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/deo/forecast/"
+        }
+      ]
+    },
+    "DHR": {
+      "checked": "2026-11-20",
+      "n": 13,
+      "rating": "strong_buy",
+      "tMean": 258.0,
+      "tLow": 210,
+      "tHigh": 275,
+      "asOf": "2026-10",
+      "brokers": "Goldman $275, Citi/JPMorgan/TD Cowen/BofA $270, Jefferies $210",
+      "note": "All 13 analysts on TipRanks in the last 3 months rate it Buy after late-October results. StockAnalysis also says Strong Buy (25 analysts) but with a lower $244.14 average, and a MarketBeat headline notes DZ Bank cut it to Hold on Oct 29.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/dhr/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/dhr/forecast/"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/instant-alerts/analyst-danaher-nyse-dhr-stock-moved-down-to-hold-by-dz-bank-2026-10-29/"
+        }
+      ]
+    },
+    "DGX": {
+      "checked": "2026-11-20",
+      "n": 7,
+      "rating": "buy",
+      "tMean": 259.57,
+      "tLow": 250,
+      "tHigh": 265,
+      "asOf": "2026-10",
+      "brokers": "BofA (Buy $265), Barclays/Morgan Stanley (Buy $260), Baird/JPMorgan/Truist/UBS (Hold)",
+      "note": "TipRanks labels it Moderate Buy though its recent count is 3 Buy vs 4 Hold; StockAnalysis (17 analysts, Buy, $247.73, Sept) and a MarketBeat Moderate Buy headline (Nov 4) support the buy label. Targets are tightly bunched near the share price.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/dgx/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/dgx/forecast/"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/instant-alerts/consensus-quest-diagnostics-incorporated-nyse-dgx-stock-rated-moderate-buy-by-sell-side-analysts-2026-11-04/"
+        }
+      ]
+    },
+    "R": {
+      "checked": "2026-11-20",
+      "n": 8,
+      "rating": "strong_buy",
+      "tMean": 305.0,
+      "tLow": 260,
+      "tHigh": 320,
+      "asOf": "2026-10",
+      "brokers": "Morgan Stanley $320, Susquehanna $318, Barclays/JPMorgan $315, Baird (Hold $260)",
+      "note": "TipRanks shows 7 Buy and 1 Hold after the Oct 23 results. StockAnalysis gives a Buy label from 11 analysts with a nearly identical $303.67 average.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/r/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/r/"
+        }
+      ]
+    },
+    "ARMK": {
+      "checked": "2026-11-20",
+      "n": 10,
+      "rating": "strong_buy",
+      "tMean": 68.25,
+      "tLow": 61,
+      "tHigh": 72.5,
+      "asOf": "2026-11",
+      "brokers": "Citi $72.50, JPMorgan/BofA $69, UBS/Goldman $68, Morgan Stanley (Hold $61)",
+      "note": "TipRanks has 9 Buy and 1 Hold, with several modest target cuts after mid-November results. StockAnalysis calls it Buy (16 analysts, $68.59), so the label is Strong Buy vs Buy depending on source.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/armk/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/armk/forecast/"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/instant-alerts/analyst-aramark-nyse-armk-given-new-6800-price-target-at-ubs-group-2026-11-17/"
+        }
+      ]
+    },
+    "BEKE": {
+      "checked": "2026-11-20",
+      "n": 7,
+      "rating": "strong_buy",
+      "tMean": 24.66,
+      "tLow": 23.6,
+      "tHigh": 26,
+      "asOf": "2026-11",
+      "brokers": "Barclays $26, Goldman $25, JPMorgan $25, DBS $25.21, CMBI $23.60",
+      "note": "USD per-ADS targets; all 7 recent analysts on TipRanks rate it Buy. StockAnalysis (22 analysts, Strong Buy, $23.92, Aug data) and a MarketBeat headline ($23.64, Oct 22) are close.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/beke/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/beke/forecast/"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/instant-alerts/consensus-ke-holdings-inc-sponsored-adr-nyse-beke-stock-has-average-price-target-of-2364-2026-10-22/"
+        }
+      ]
+    },
+    "CNI": {
+      "checked": "2026-11-20",
+      "n": 16,
+      "rating": "buy",
+      "tMean": 137.36,
+      "tLow": 127.37,
+      "tHigh": 145,
+      "asOf": "2026-11",
+      "brokers": "Wells Fargo $145, Citi $143, Stifel ~$143, Scotiabank/RBC/CIBC ~$142; Holds at JPMorgan, UBS, Barclays, Susquehanna, Raymond James",
+      "note": "TipRanks shows the CNI figures in USD, with Canadian-dollar targets apparently converted at about 0.716; it has 7 Buy vs 9 Hold yet labels it Moderate Buy. StockAnalysis (30 analysts, Buy, about $135.90) and a MarketBeat headline ($138.76, Nov 4) are similar.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/cni/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/cni/forecast/"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/instant-alerts/consensus-canadian-national-railway-company-nyse-cni-stock-has-consensus-target-price-of-13876-according-to-analysts-2026-11-04/"
+        }
+      ]
+    },
+    "AWK": {
+      "checked": "2026-11-20",
+      "n": 6,
+      "rating": "hold",
+      "tMean": 148.5,
+      "tLow": 127,
+      "tHigh": 165,
+      "asOf": "2026-11",
+      "brokers": "Argus (Buy $165), UBS (downgraded to Hold $162), BofA (Hold $157), Barclays (Sell $127)",
+      "note": "TipRanks shows 1 Buy, 4 Hold, 1 Sell with an average roughly at the share price. StockAnalysis (13 analysts, $140.64, Oct 19) and MarketBeat ($140.11, Oct 9) also say Hold but with older, lower averages.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/awk/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/awk/forecast/"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/instant-alerts/consensus-american-water-works-company-inc-nyse-awk-stock-has-average-price-target-of-14011-according-to-analysts-2026-10-09/"
         }
       ]
     }
