@@ -1,6 +1,6 @@
 {
   "about": "Analyst ratings found by web research for stocks that Yahoo Finance does not cover. Maintained by a weekly scheduled task; read by build_dashboard.py. n = number of analysts found (0 = searched, none found). rating: strong_buy | buy | hold | underperform | sell | null. checked = date researched; asOf = date of the newest analyst view found.",
-  "updated": "2026-11-20",
+  "updated": "2026-11-27",
   "stocks": {
     "CHT": {
       "checked": "2026-11-19",
@@ -1284,6 +1284,556 @@
         {
           "name": "TipRanks",
           "url": "https://www.tipranks.com/stocks/sjm/forecast"
+        }
+      ]
+    },
+    "LLYVK": {
+      "checked": "2026-11-27",
+      "n": 0,
+      "rating": null,
+      "tMean": null,
+      "tLow": null,
+      "tHigh": null,
+      "asOf": null,
+      "note": "No current analyst ratings found for the new Liberty Live Holdings shares. The only broker view (Seaport, Aug 2023) is too old to count.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/llyvk/forecast"
+        },
+        {
+          "name": "MarketBeat",
+          "url": "https://www.marketbeat.com/stocks/NASDAQ/LLYVK/forecast"
+        },
+        {
+          "name": "StockAnalysis (LLYVA)",
+          "url": "https://stockanalysis.com/stocks/llyva/forecast/"
+        },
+        {
+          "name": "Chartmill",
+          "url": "https://chartmill.com/stock/quote/LLYVK/analyst-ratings"
+        }
+      ]
+    },
+    "WTW": {
+      "checked": "2026-11-27",
+      "n": 11,
+      "rating": "buy",
+      "tMean": 372.09,
+      "tLow": 332.0,
+      "tHigh": 397.0,
+      "asOf": "2026-11",
+      "brokers": "KBW, UBS, Baird, Mizuho, Evercore ISI (Buy); Morgan Stanley, Wells Fargo, Barclays (Hold)",
+      "note": "8 Buy and 3 Hold on TipRanks, with most targets revised after Q3 results. StockAnalysis's older consensus also says Buy.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/WTW/forecast"
+        },
+        {
+          "name": "StockAnalysis ratings",
+          "url": "https://stockanalysis.com/stocks/wtw/ratings/"
+        },
+        {
+          "name": "StockAnalysis forecast",
+          "url": "https://stockanalysis.com/stocks/wtw/forecast/"
+        }
+      ]
+    },
+    "MORN": {
+      "checked": "2026-11-27",
+      "n": 3,
+      "rating": "buy",
+      "tMean": 254.33,
+      "tLow": 245.0,
+      "tHigh": 260.0,
+      "asOf": "2026-11",
+      "brokers": "BMO Capital, UBS, Rothschild & Co Redburn",
+      "note": "Only three brokers cover it. MarketScreener's mean is Buy (page dated 12 Nov 2026), and TradingView gives a similar average of $252.67. asOf is the page date: the newest individual rating I saw was BMO's in Oct 2026.",
+      "sources": [
+        {
+          "name": "MarketScreener",
+          "url": "https://uk.marketscreener.com/quote/stock/MORNINGSTAR-INC-10068/consensus/"
+        },
+        {
+          "name": "TradingView",
+          "url": "https://www.tradingview.com/symbols/MORN/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/morn/forecast/"
+        }
+      ]
+    },
+    "VRNS": {
+      "checked": "2026-11-27",
+      "n": 22,
+      "rating": "hold",
+      "tMean": 50.79,
+      "tLow": 45.0,
+      "tHigh": 58.0,
+      "asOf": "2026-10",
+      "brokers": "Rosenblatt, Barclays, Truist, B. Riley (Hold); Cantor Fitzgerald (Buy)",
+      "note": "Proofpoint agreed in Oct 2026 to buy Varonis for $49.75 cash, so most brokers moved to Hold with targets near the deal price.",
+      "sources": [
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/vrns/forecast/"
+        },
+        {
+          "name": "TradingView",
+          "url": "https://www.tradingview.com/symbols/NASDAQ-VRNS/forecast"
+        },
+        {
+          "name": "Thoma Bravo press release",
+          "url": "https://www.thomabravo.com/press-releases/proofpoint-to-acquire-varonis-in-a-6.3-billion-transaction"
+        }
+      ]
+    },
+    "WRB": {
+      "checked": "2026-11-27",
+      "n": 18,
+      "rating": "hold",
+      "tMean": 69.76,
+      "tLow": 51.0,
+      "tHigh": 83.0,
+      "asOf": "2026-10",
+      "brokers": "UBS, Argus, Cantor Fitzgerald, Morgan Stanley (Hold); Goldman Sachs (Buy)",
+      "note": "Both MarketScreener and StockAnalysis (avg $69.18) put the consensus at Hold. The average target is below the current price, which looks dated against the stock's recent rise.",
+      "sources": [
+        {
+          "name": "MarketScreener",
+          "url": "https://www.marketscreener.com/quote/stock/W-R-BERKLEY-CORPORATION-11810/consensus/"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/wrb/forecast/"
+        }
+      ]
+    },
+    "EHC": {
+      "checked": "2026-11-27",
+      "n": 13,
+      "rating": "strong_buy",
+      "tMean": 156.08,
+      "tLow": 142.0,
+      "tHigh": 177.0,
+      "asOf": "2026-11",
+      "brokers": "Leerink, Mizuho, TD Cowen, UBS, KeyBanc, BofA, Barclays, Raymond James",
+      "note": "Every recent rating is Buy, with targets raised after Q3 results in late Oct and early Nov 2026. TradingView shows the same $156.08 average and a Strong Buy.",
+      "sources": [
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/ehc/forecast/"
+        },
+        {
+          "name": "TradingView",
+          "url": "https://www.tradingview.com/symbols/EHC/forecast"
+        },
+        {
+          "name": "StockAnalysis ratings",
+          "url": "https://stockanalysis.com/stocks/ehc/ratings/"
+        }
+      ]
+    },
+    "PCTY": {
+      "checked": "2026-11-27",
+      "n": 16,
+      "rating": "strong_buy",
+      "tMean": 200.14,
+      "tLow": 176.0,
+      "tHigh": 214.0,
+      "asOf": "2026-11",
+      "brokers": "TD Cowen, Raymond James, Truist, Cantor, BMO, Guggenheim, Baird, Mizuho",
+      "note": "15 Buy and 1 Hold on TipRanks; eight named brokers reaffirmed Buy on 6 Nov 2026 with targets of $190-210.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/pcty/forecast"
+        },
+        {
+          "name": "StockAnalysis ratings",
+          "url": "https://stockanalysis.com/stocks/pcty/ratings/"
+        },
+        {
+          "name": "StockAnalysis forecast",
+          "url": "https://stockanalysis.com/stocks/pcty/forecast"
+        }
+      ]
+    },
+    "PTC": {
+      "checked": "2026-11-27",
+      "n": 17,
+      "rating": "hold",
+      "tMean": 201.71,
+      "tLow": 170.0,
+      "tHigh": 205.0,
+      "asOf": "2026-10",
+      "brokers": "Mizuho, Citi, BMO, Oppenheimer, Deutsche Bank",
+      "note": "In early Oct 2026 Schneider Electric agreed to buy PTC for $205 cash per share. Brokers then moved to Hold with $205 targets. StockAnalysis also shows Hold with an average of $201.",
+      "sources": [
+        {
+          "name": "MarketScreener",
+          "url": "https://ca.marketscreener.com/quote/stock/PTC-INC-12445262/consensus/"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/ptc/forecast/"
+        },
+        {
+          "name": "FourWeekMBA (deal)",
+          "url": "https://fourweekmba.com/ai-schneider-electric-ptc-22-6b-all-cash-205-per-share-financin/"
+        }
+      ]
+    },
+    "ROIV": {
+      "checked": "2026-11-27",
+      "n": 12,
+      "rating": "strong_buy",
+      "tMean": 49.36,
+      "tLow": 40.0,
+      "tHigh": 62.0,
+      "asOf": "2026-11",
+      "brokers": "TD Cowen, H.C. Wainwright, Citi (Buy); BofA, Wolfe (Hold)",
+      "note": "TipRanks counts 10 Buy and 2 Hold (page dated 23 Nov 2026). StockAnalysis (13 analysts, avg $48.27, Oct 2026) also shows Strong Buy. asOf is the page date.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/roiv/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/roiv/forecast/"
+        }
+      ]
+    },
+    "WMG": {
+      "checked": "2026-11-27",
+      "n": 10,
+      "rating": "strong_buy",
+      "tMean": 39.3,
+      "tLow": 35.0,
+      "tHigh": 43.0,
+      "asOf": "2026-11",
+      "brokers": "UBS, JPMorgan, Jefferies, Evercore, Wells Fargo, Morgan Stanley, Bernstein, Guggenheim (Buy); Barclays, BofA (Hold)",
+      "note": "TipRanks labels 8 Buy and 2 Hold a Strong Buy, while StockAnalysis's older consensus (Oct 2026, 16 analysts, avg $37.81) says Buy. Many targets were raised after results on 19-23 Nov 2026.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/wmg/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/wmg/forecast/"
+        }
+      ]
+    },
+    "WTRG": {
+      "checked": "2026-11-27",
+      "n": 6,
+      "rating": "hold",
+      "tMean": 40.0,
+      "tLow": 38.0,
+      "tHigh": 43.0,
+      "asOf": "2026-10",
+      "brokers": "UBS (Buy), Seaport (Hold), Barclays (Sell)",
+      "note": "Thin, mixed coverage with an average target below the current price. A pending merger may explain why coverage looks stale.",
+      "sources": [
+        {
+          "name": "MarketScreener",
+          "url": "https://ca.marketscreener.com/quote/stock/ESSENTIAL-UTILITIES-INC-14921/consensus/"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/wtrg/forecast/"
+        },
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/wtrg/forecast"
+        }
+      ]
+    },
+    "PPG": {
+      "checked": "2026-11-27",
+      "n": 15,
+      "rating": "buy",
+      "tMean": 132.21,
+      "tLow": 120.0,
+      "tHigh": 140.0,
+      "asOf": "2026-11",
+      "brokers": "Barclays, BMO, Wells Fargo (Buy); RBC, UBS (Hold)",
+      "note": "TipRanks counts 10 Buy and 5 Hold (Moderate Buy) as of 25 Nov 2026. StockAnalysis's older consensus (25 analysts, avg $125.73, Oct 2026) also says Buy. asOf is the page date.",
+      "sources": [
+        {
+          "name": "TipRanks",
+          "url": "https://www.tipranks.com/stocks/ppg/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/ppg/forecast/"
+        }
+      ]
+    },
+    "RELX": {
+      "checked": "2026-11-27",
+      "n": 3,
+      "rating": "buy",
+      "tMean": 45.9,
+      "tLow": 31,
+      "tHigh": 57,
+      "asOf": "2026-11",
+      "brokers": "Erste Group, BofA Securities, BNP Paribas Exane",
+      "note": "Only a few analysts publish USD targets for the ADR (2 Buy, 1 Sell). Wider London-line coverage is in pence and was not converted.",
+      "sources": [
+        {
+          "name": "Investing.com",
+          "url": "https://uk.investing.com/equities/reed-elsevier-plc-consensus-estimates"
+        },
+        {
+          "name": "Trendlyne US",
+          "url": "https://us.trendlyne.com/us/equity/consensus-estimates/1404670/RELX/relx-plc-adr/"
+        },
+        {
+          "name": "Nasdaq (no data)",
+          "url": "https://www.nasdaq.com/market-activity/stocks/RELX/analyst-research"
+        }
+      ]
+    },
+    "RNR": {
+      "checked": "2026-11-27",
+      "n": 18,
+      "rating": "hold",
+      "tMean": 347.31,
+      "tLow": 312,
+      "tHigh": 428,
+      "asOf": "2026-10",
+      "brokers": "Morgan Stanley, Wells Fargo, J.P. Morgan, TD Cowen, BofA",
+      "note": "S&P Global consensus is Hold with the mean target roughly at the current price; latest moves followed Q3 results in October 2026. TradingView agrees (Neutral, mean ~$350 from 16 targets).",
+      "sources": [
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/rnr/forecast/"
+        },
+        {
+          "name": "TradingView",
+          "url": "https://www.tradingview.com/symbols/NYSE-RNR/forecast"
+        }
+      ]
+    },
+    "ROP": {
+      "checked": "2026-11-27",
+      "n": 19,
+      "rating": "buy",
+      "tMean": 457.29,
+      "tLow": 335,
+      "tHigh": 550,
+      "asOf": "2026-10",
+      "brokers": "Truist, RBC, Citi, Jefferies, William Blair",
+      "note": "Consensus is Buy, but the current price is already above the mean target; several brokers raised targets after Q3 results on 22-23 Oct 2026. MarketScreener's slightly older snapshot shows 19 analysts, Outperform, mean ~$439.",
+      "sources": [
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/rop/forecast/"
+        },
+        {
+          "name": "MarketScreener",
+          "url": "https://ca.marketscreener.com/quote/stock/ROPER-TECHNOLOGIES-INC-14279/consensus/"
+        }
+      ]
+    },
+    "TTC": {
+      "checked": "2026-11-27",
+      "n": 6,
+      "rating": "buy",
+      "tMean": 111,
+      "tLow": 100,
+      "tHigh": 120,
+      "asOf": "2026-09",
+      "brokers": "Oppenheimer, D.A. Davidson, Northland, Baird",
+      "note": "Small coverage group leaning Buy with modest upside; newest view is Oppenheimer's September 2026 initiation at $120. TradingView shows the same $111 mean and $100-120 range.",
+      "sources": [
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/ttc/forecast/"
+        },
+        {
+          "name": "TradingView",
+          "url": "https://in.tradingview.com/symbols/NYSE-TTC/forecast"
+        }
+      ]
+    },
+    "VRSN": {
+      "checked": "2026-11-27",
+      "n": 5,
+      "rating": "buy",
+      "tMean": 339.6,
+      "tLow": 290,
+      "tHigh": 380,
+      "asOf": "2026-11",
+      "note": "MarketScreener's current consensus is Outperform from 5 analysts with a mean of ~$340. StockAnalysis only lists 3 older targets (Citi, JPMorgan, Baird; latest April 2026) averaging ~$290, so its data look stale.",
+      "brokers": "Citigroup, JPMorgan, Baird",
+      "sources": [
+        {
+          "name": "MarketScreener",
+          "url": "https://ca.marketscreener.com/quote/stock/VERISIGN-INC-4912/consensus/"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/vrsn/ratings/"
+        }
+      ]
+    },
+    "WEX": {
+      "checked": "2026-11-27",
+      "n": 11,
+      "rating": "hold",
+      "tMean": 202.09,
+      "tLow": 176,
+      "tHigh": 230,
+      "asOf": "2026-11",
+      "brokers": "Cantor Fitzgerald, Piper Sandler, Wolfe, BofA, Mizuho, UBS",
+      "note": "Rating labels disagree (StockAnalysis Buy, TradingView Neutral); Investing.com's vote count is 5 Buy vs 10 Hold, so Hold is used. Mean targets cluster around $194-202 across sources.",
+      "sources": [
+        {
+          "name": "Investing.com",
+          "url": "https://www.investing.com/equities/wright-express-corp-consensus-estimates"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/wex/forecast/"
+        },
+        {
+          "name": "TradingView",
+          "url": "https://www.tradingview.com/symbols/WEX/forecast"
+        }
+      ]
+    },
+    "WTS": {
+      "checked": "2026-11-27",
+      "n": 10,
+      "rating": "buy",
+      "tMean": 393,
+      "tLow": 360,
+      "tHigh": 430,
+      "asOf": "2026-11",
+      "brokers": "Stifel, Baird, RBC, Barclays, Goldman Sachs",
+      "note": "MarketScreener and TradingView both show Buy/Outperform with a ~$393 mean; StockAnalysis labels it Hold with a $404 mean (last updated Aug 2026), so the split is noted.",
+      "sources": [
+        {
+          "name": "MarketScreener",
+          "url": "https://www.marketscreener.com/quote/stock/WATTS-WATER-TECHNOLOGIES-14922/consensus/"
+        },
+        {
+          "name": "TradingView",
+          "url": "https://www.tradingview.com/symbols/WTS/forecast"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/wts/forecast/"
+        }
+      ]
+    },
+    "PSO": {
+      "checked": "2026-11-27",
+      "n": 2,
+      "rating": "hold",
+      "tMean": 16.15,
+      "tLow": 14,
+      "tHigh": 18.3,
+      "asOf": null,
+      "note": "Only two analysts publish USD targets on the ADR line (1 Hold, 1 Sell, past-3-month poll, no date given); mean is below the current price. Wider London-line coverage is in GBp and was not converted.",
+      "sources": [
+        {
+          "name": "Investing.com",
+          "url": "https://www.investing.com/equities/pearson-plc-consensus-estimates"
+        },
+        {
+          "name": "Trendlyne US",
+          "url": "https://us.trendlyne.com/us/equity/consensus-estimates/1404552/PSO/pearson-plc-adr/"
+        }
+      ]
+    },
+    "RL": {
+      "checked": "2026-11-27",
+      "n": 19,
+      "rating": "buy",
+      "tMean": 446.71,
+      "tLow": 250,
+      "tHigh": 520,
+      "asOf": "2026-10",
+      "brokers": "Wells Fargo, Raymond James, BofA, UBS, Telsey, J.P. Morgan, Citi, Jefferies",
+      "note": "Coverage is uniformly bullish, with all recent listed ratings Buy; MarketScreener shows the same 19-analyst $446.71 mean. Newest dated actions are mid-October 2026, so post-November-earnings revisions may not be reflected.",
+      "sources": [
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/rl/forecast/"
+        },
+        {
+          "name": "MarketScreener",
+          "url": "https://www.marketscreener.com/quote/stock/RALPH-LAUREN-CORPORATION-14256/consensus/"
+        }
+      ]
+    },
+    "SAIC": {
+      "checked": "2026-11-27",
+      "n": 10,
+      "rating": "hold",
+      "tMean": 132.56,
+      "tLow": 99,
+      "tHigh": 154,
+      "asOf": "2026-10",
+      "brokers": "Goldman Sachs, TD Cowen, J.P. Morgan, UBS, Truist, Stifel, William Blair, Jefferies",
+      "note": "Mostly Hold ratings with one Buy (Stifel) and one Sell (Goldman); the mean target sits below the current price. TradingView shows the same $132.56 mean and Neutral rating.",
+      "sources": [
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/saic/forecast/"
+        },
+        {
+          "name": "TradingView",
+          "url": "https://in.tradingview.com/symbols/NASDAQ-SAIC/forecast"
+        }
+      ]
+    },
+    "VRTX": {
+      "checked": "2026-11-27",
+      "n": 32,
+      "rating": "buy",
+      "tMean": 595.36,
+      "tLow": 350,
+      "tHigh": 725,
+      "asOf": "2026-11",
+      "brokers": "TD Cowen, H.C. Wainwright, BofA, UBS, Scotiabank",
+      "note": "Broad Buy consensus; MarketScreener (24 Nov 2026) shows a $595 mean, up from StockAnalysis's ~$571 at late October after several post-Q3 updates.",
+      "sources": [
+        {
+          "name": "MarketScreener",
+          "url": "https://www.marketscreener.com/quote/stock/VERTEX-PHARMACEUTICALS-IN-11321/consensus/"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/vrtx/forecast/"
+        }
+      ]
+    },
+    "WELL": {
+      "checked": "2026-11-27",
+      "n": 22,
+      "rating": "buy",
+      "tMean": 265.45,
+      "tLow": 230,
+      "tHigh": 292,
+      "asOf": "2026-11",
+      "brokers": "Mizuho, Wells Fargo, UBS, Barclays, BMO, J.P. Morgan, Evercore ISI, Jefferies",
+      "note": "Strong Buy skew (19 Buy, 3 Hold) per Investing.com, with latest actions on 16 Nov 2026. StockAnalysis shows a similar $262 mean from 22 analysts as of October.",
+      "sources": [
+        {
+          "name": "Investing.com",
+          "url": "https://ng.investing.com/equities/health-care-reit-consensus-estimates"
+        },
+        {
+          "name": "StockAnalysis",
+          "url": "https://stockanalysis.com/stocks/well/forecast/"
         }
       ]
     }
